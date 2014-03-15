@@ -14,6 +14,7 @@ category:            Graphics
 build-type:          Simple
 -- extra-source-files:  
 cabal-version:       >=1.10
+data-files:          DynamicGraph/shader.vert, DynamicGraph/shader.frag
 
 library
   exposed-modules:     DynamicGraph.SimpleLine
@@ -22,3 +23,4 @@ library
   build-depends:       base >=4.6 && <4.7, GLFW-b >=1.4 && <1.5, OpenGL >=2.9 && <2.10, GLUtil >=0.7 && <0.8, transformers >=0.3 && <0.4, either >=4.1 && <4.2
   -- hs-source-dirs:      
   default-language:    Haskell2010
+  other-modules:       Paths_dynamic_graph

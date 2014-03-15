@@ -11,6 +11,8 @@ import Control.Monad.Trans.Either
 import Foreign.Storable
 import Foreign.Marshal.Array
 
+import Paths_dynamic_graph
+
 graph :: Storable a => EitherT String IO ([a] -> IO ())
 graph = do
     lift $ setErrorCallback $ Just $ \error msg -> do
@@ -27,8 +29,10 @@ graph = do
         makeContextCurrent (Just win)
 
         --Load the shaders
-        vs <- loadShader VertexShader   "shader.vert"
-        fs <- loadShader FragmentShader "shader.frag"
+        vertFN <- getDataFileName "DynamicGraph/shader.vert"
+        fragFN <- getDataFileName "DynamicGraph/shader.frag"
+        vs <- loadShader VertexShader   vertFN
+        fs <- loadShader FragmentShader fragFN
         p  <- linkShaderProgram [vs, fs]
 
         --Set stuff
