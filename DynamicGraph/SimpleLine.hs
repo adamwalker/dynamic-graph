@@ -15,13 +15,6 @@ import Paths_dynamic_graph
 
 graph :: Storable a => EitherT String IO ([a] -> IO ())
 graph = do
-    lift $ setErrorCallback $ Just $ \error msg -> do
-        print error
-        putStrLn msg
-
-    res <- lift $ G.init
-    unless res (left "error initializing glfw")
-
     res' <- lift $ createWindow 1024 768 "" Nothing Nothing
     win <- maybe (left "error creating window") return res'
 
@@ -51,6 +44,7 @@ graph = do
         vertexAttribPointer loc $= (ToFloat, vad)
 
         return $ \vbd -> do
+            makeContextCurrent (Just win)
             clear [ColorBuffer, DepthBuffer]
             withArray vbd $ \ptr -> 
                 bufferData ArrayBuffer $= (fromIntegral $ length vbd * sizeOf (head vbd), ptr, StaticDraw)
