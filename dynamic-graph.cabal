@@ -14,10 +14,10 @@ category:            Graphics
 build-type:          Simple
 -- extra-source-files:  
 cabal-version:       >=1.10
-data-files:          shaders/simple_line.vert, shaders/simple_line.frag
+data-files:          shaders/simple_line.vert, shaders/simple_line.frag, shaders/texture_line.vert, shaders/texture_line.frag
 
 library
-  exposed-modules:     DynamicGraph.SimpleLine
+  exposed-modules:     DynamicGraph.SimpleLine, DynamicGraph.TextureLine
   -- other-modules:       
   -- other-extensions:    
   build-depends:       base >=4.6 && <4.8, GLFW-b >=1.4 && <1.5, OpenGL >=2.9 && <2.10, GLUtil >=0.7 && <0.8, transformers >=0.3 && <0.5, either >=4.1 && <4.2
