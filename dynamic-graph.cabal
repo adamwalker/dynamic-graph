@@ -14,7 +14,7 @@ category:            Graphics
 build-type:          Simple
 -- extra-source-files:  
 cabal-version:       >=1.10
-data-files:          DynamicGraph/shader.vert, DynamicGraph/shader.frag
+data-files:          shaders/simple_line.vert, shaders/simple_line.frag
 
 library
   exposed-modules:     DynamicGraph.SimpleLine

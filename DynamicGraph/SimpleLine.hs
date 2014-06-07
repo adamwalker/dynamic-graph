@@ -22,8 +22,8 @@ graph = do
         makeContextCurrent (Just win)
 
         --Load the shaders
-        vertFN <- getDataFileName "DynamicGraph/shader.vert"
-        fragFN <- getDataFileName "DynamicGraph/shader.frag"
+        vertFN <- getDataFileName "shaders/simple_line.vert"
+        fragFN <- getDataFileName "shaders/simple_line.frag"
         vs <- loadShader VertexShader   vertFN
         fs <- loadShader FragmentShader fragFN
         p  <- linkShaderProgram [vs, fs]
@@ -32,7 +32,7 @@ graph = do
         clearColor $= Color4 1 1 1 1
         currentProgram $= Just p
 
-        [ab] <- genObjectNames 1
+        ab <- genObjectName
 
         loc <- get $ attribLocation p "coord"
 
