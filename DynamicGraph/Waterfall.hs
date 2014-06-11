@@ -15,8 +15,14 @@ import Pipes
 
 import Paths_dynamic_graph
 
-graph :: IsPixelData a => Int -> Int -> EitherT String IO (Consumer a IO ())
-graph width height = do
+jet :: [GLfloat]
+jet =  [0, 0, 0.5,  0, 0, 1,  0, 0.5, 1,   0, 1, 1,  0.5, 1, 0.5,  1, 1, 0,  1, 0.5, 0,  1, 0, 0,  0.5, 0, 0]
+
+hot :: [GLfloat]
+hot =  [0, 0, 0,  1, 0, 0,  1, 1, 0,  1, 1, 1]
+
+graph :: IsPixelData a => Int -> Int -> [GLfloat] -> EitherT String IO (Consumer a IO ())
+graph width height colorMap = do
     res' <- lift $ createWindow 1024 768 "" Nothing Nothing
     win <- maybe (left "error creating window") return res'
 
@@ -56,17 +62,40 @@ graph width height = do
         let yCoords :: [GLfloat]
             yCoords = take (width * height) $ repeat 0
 
-        --texture Texture2D $= Enabled
+        activeTexture $= TextureUnit 0
+        texture Texture2D $= Enabled
         to <- loadTexture (TexInfo (fromIntegral width) (fromIntegral height) TexMono yCoords)
         
-        --activeTexture $= TextureUnit 0
-        --loc <- get $ uniformLocation p "texture"
-        --asUniform (0 :: GLint) loc 
+        loc <- get $ uniformLocation p "texture"
+        asUniform (0 :: GLint) loc 
 
-        textureFilter Texture2D $= ((Nearest, Nothing), Nearest)
-
+        textureFilter Texture2D $= ((Linear', Nothing), Linear')
         textureWrapMode Texture2D S $= (Repeated, Repeat)
         textureWrapMode Texture2D T $= (Repeated, Repeat)
+
+        activeTexture $= TextureUnit 1
+        texture Texture2D $= Enabled
+        to <- loadTexture (TexInfo (fromIntegral $ length colorMap `quot` 3) 1 TexRGB colorMap)
+        textureFilter Texture2D $= ((Linear', Nothing), Linear')
+        textureWrapMode Texture2D S $= (Repeated, ClampToEdge)
+        textureWrapMode Texture2D T $= (Repeated, ClampToEdge)
+
+        loc <- get $ uniformLocation p "colorMap"
+        asUniform (1 :: GLint) loc 
+
+        let lcm :: GLfloat
+            lcm = fromIntegral $ length colorMap `quot` 3
+        loc <- get $ uniformLocation p "scale"
+        asUniform ((lcm - 1) / lcm) loc 
+
+        loc <- get $ uniformLocation p "offset"
+        asUniform (0.5 / lcm) loc 
+
+        errors <- get errors
+        print errors
+
+        --No idea why this is needed
+        activeTexture $= TextureUnit 0
 
         loc <- get $ uniformLocation p "voffset"
 
