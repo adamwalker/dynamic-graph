@@ -70,7 +70,7 @@ graph width height colorMap = do
         asUniform (0 :: GLint) loc 
 
         textureFilter Texture2D $= ((Linear', Nothing), Linear')
-        textureWrapMode Texture2D S $= (Repeated, Repeat)
+        textureWrapMode Texture2D S $= (Repeated, ClampToEdge)
         textureWrapMode Texture2D T $= (Repeated, Repeat)
 
         activeTexture $= TextureUnit 1
