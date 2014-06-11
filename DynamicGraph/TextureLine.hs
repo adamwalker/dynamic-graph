@@ -69,7 +69,7 @@ graph samples = do
 
         return $ \vbd -> do
             makeContextCurrent (Just win)
-            clear [ColorBuffer, DepthBuffer]
+            clear [ColorBuffer]
 
             reloadTexture to (TexInfo (fromIntegral samples) 1 TexMono vbd)
 
