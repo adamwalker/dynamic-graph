@@ -98,9 +98,6 @@ graph width height colorMap = do
         loc <- get $ uniformLocation p "offset"
         asUniform (0.5 / lcm) loc 
 
-        errors <- get errors
-        print errors
-
         --No idea why this is needed
         activeTexture $= TextureUnit 0
 
