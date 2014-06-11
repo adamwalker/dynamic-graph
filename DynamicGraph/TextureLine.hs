@@ -14,9 +14,9 @@ import Pipes
 
 import Paths_dynamic_graph
 
-graph :: IsPixelData a => Int -> Int -> EitherT String IO (a -> IO ())
-graph samples xResolution = do
-    res' <- lift $ createWindow 1024 768 "" Nothing Nothing
+graph :: IsPixelData a => Int -> Int -> Int -> Int -> EitherT String IO (a -> IO ())
+graph width height samples xResolution = do
+    res' <- lift $ createWindow width height "" Nothing Nothing
     win <- maybe (left "error creating window") return res'
 
     lift $ makeContextCurrent (Just win)
@@ -78,6 +78,6 @@ graph samples xResolution = do
 toConsumer :: Monad m => (a -> m b) -> Consumer a m ()
 toConsumer func = forever $ await >>= lift . func
 
-graphAsComsumer :: IsPixelData a => Int -> Int -> EitherT String IO (Consumer a IO ())
-graphAsComsumer samples xResolution = liftM toConsumer $ graph samples xResolution
+graphAsComsumer :: IsPixelData a => Int -> Int -> Int -> Int -> EitherT String IO (Consumer a IO ())
+graphAsComsumer width height samples xResolution = liftM toConsumer $ graph width height samples xResolution
 

@@ -32,9 +32,9 @@ blue =  [0, 0, 0, 0, 0, 1]
 blue' :: [GLfloat]
 blue' =  [0, 0, 1, 0, 0, 0]
 
-graph :: IsPixelData a => Int -> Int -> [GLfloat] -> EitherT String IO (Consumer a IO ())
-graph width height colorMap = do
-    res' <- lift $ createWindow 1024 768 "" Nothing Nothing
+graph :: IsPixelData a => Int -> Int -> Int -> Int -> [GLfloat] -> EitherT String IO (Consumer a IO ())
+graph windowWidth windowHeight width height colorMap = do
+    res' <- lift $ createWindow windowWidth windowHeight "" Nothing Nothing
     win <- maybe (left "error creating window") return res'
 
     lift $ do

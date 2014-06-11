@@ -12,9 +12,9 @@ import Foreign.Marshal.Array
 
 import Paths_dynamic_graph
 
-graph :: Storable a => EitherT String IO ([a] -> IO ())
-graph = do
-    res' <- lift $ createWindow 1024 768 "" Nothing Nothing
+graph :: Storable a => Int -> Int -> EitherT String IO ([a] -> IO ())
+graph width height = do
+    res' <- lift $ createWindow width height "" Nothing Nothing
     win <- maybe (left "error creating window") return res'
 
     lift $ do
