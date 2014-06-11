@@ -20,6 +20,18 @@ jet =  [0, 0, 0.5,  0, 0, 1,  0, 0.5, 1,   0, 1, 1,  0.5, 1, 0.5,  1, 1, 0,  1, 
 hot :: [GLfloat]
 hot =  [0, 0, 0,  1, 0, 0,  1, 1, 0,  1, 1, 1]
 
+bw :: [GLfloat]
+bw =  [0, 0, 0, 1, 1, 1]
+
+bw' :: [GLfloat]
+bw' =  [1, 1, 1, 0, 0, 0]
+
+blue :: [GLfloat]
+blue =  [0, 0, 0, 0, 0, 1]
+
+blue' :: [GLfloat]
+blue' =  [0, 0, 1, 0, 0, 0]
+
 graph :: IsPixelData a => Int -> Int -> [GLfloat] -> EitherT String IO (Consumer a IO ())
 graph width height colorMap = do
     res' <- lift $ createWindow 1024 768 "" Nothing Nothing
