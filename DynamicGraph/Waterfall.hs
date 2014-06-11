@@ -50,7 +50,6 @@ graph width height colorMap = do
         p  <- linkShaderProgram [vs, fs]
 
         --Set stuff
-        clearColor $= Color4 1 1 1 1
         currentProgram $= Just p
 
         ab <- genObjectName 
@@ -114,7 +113,6 @@ graph width height colorMap = do
 
                 lift $ do
                     makeContextCurrent (Just win)
-                    clear [ColorBuffer, DepthBuffer]
 
                     let textureOffset = (yoffset + height - 1) `mod` height
 
