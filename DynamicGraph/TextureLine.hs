@@ -14,8 +14,8 @@ import Pipes
 
 import Paths_dynamic_graph
 
-graph :: IsPixelData a => Int -> EitherT String IO (a -> IO ())
-graph samples = do
+graph :: IsPixelData a => Int -> Int -> EitherT String IO (a -> IO ())
+graph samples xResolution = do
     res' <- lift $ createWindow 1024 768 "" Nothing Nothing
     win <- maybe (left "error creating window") return res'
 
@@ -48,9 +48,9 @@ graph samples = do
         vertexAttribPointer loc $= (ToFloat, vad)
 
         let xCoords :: [GLfloat]
-            xCoords = take samples $ iterate (+ 2 / fromIntegral samples) (-1)
+            xCoords = take xResolution $ iterate (+ 2 / fromIntegral xResolution) (-1)
         withArray xCoords $ \ptr -> 
-            bufferData ArrayBuffer $= (fromIntegral $ sizeOf(undefined::GLfloat) * samples, ptr, StaticDraw)
+            bufferData ArrayBuffer $= (fromIntegral $ sizeOf(undefined::GLfloat) * xResolution, ptr, StaticDraw)
 
         let yCoords :: [GLfloat]
             yCoords = take samples $ repeat 0
@@ -73,12 +73,12 @@ graph samples = do
 
             reloadTexture to (TexInfo (fromIntegral samples) 1 TexMono vbd)
 
-            drawArrays LineStrip 0 (fromIntegral samples)
+            drawArrays LineStrip 0 (fromIntegral xResolution)
             swapBuffers win
 
 toConsumer :: Monad m => (a -> m b) -> Consumer a m ()
 toConsumer func = forever $ await >>= lift . func
 
-graphAsComsumer :: IsPixelData a => Int -> EitherT String IO (Consumer a IO ())
-graphAsComsumer = liftM toConsumer . graph
+graphAsComsumer :: IsPixelData a => Int -> Int -> EitherT String IO (Consumer a IO ())
+graphAsComsumer samples xResolution = liftM toConsumer $ graph samples xResolution
 
