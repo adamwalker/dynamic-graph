@@ -19,12 +19,11 @@ graph samples xResolution = do
     res' <- lift $ createWindow 1024 768 "" Nothing Nothing
     win <- maybe (left "error creating window") return res'
 
+    lift $ makeContextCurrent (Just win)
+    mtu <- lift $ get maxVertexTextureImageUnits
+    when (mtu <= 0) $ left "No texture units accessible from vertex shader"
+
     lift $ do
-        makeContextCurrent (Just win)
-
-        mtu <- get maxVertexTextureImageUnits
-        print mtu
-
         --Load the shaders
         vertFN <- getDataFileName "shaders/texture_line.vert"
         fragFN <- getDataFileName "shaders/texture_line.frag"
