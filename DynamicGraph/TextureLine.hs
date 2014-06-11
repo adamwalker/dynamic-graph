@@ -11,6 +11,8 @@ import Control.Monad.Trans.Either
 import Foreign.Storable
 import Foreign.Marshal.Array
 
+import Pipes
+
 import Paths_dynamic_graph
 
 graph :: IsPixelData a => Int -> EitherT String IO (a -> IO ())
@@ -74,4 +76,10 @@ graph samples = do
 
             drawArrays LineStrip 0 (fromIntegral samples)
             swapBuffers win
+
+toConsumer :: Monad m => (a -> m b) -> Consumer a m ()
+toConsumer func = forever $ await >>= lift . func
+
+graphAsComsumer :: IsPixelData a => Int -> EitherT String IO (Consumer a IO ())
+graphAsComsumer = liftM toConsumer . graph
 
