@@ -4,7 +4,6 @@ import Control.Monad
 import Graphics.UI.GLFW as G
 import Graphics.Rendering.OpenGL
 import Graphics.GLUtil
-import Graphics.GLUtil.Camera3D
 
 import Control.Monad.Trans.Class
 import Control.Monad.Trans.Either
