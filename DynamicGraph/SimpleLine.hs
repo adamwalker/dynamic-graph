@@ -4,7 +4,6 @@ import Control.Monad
 import Graphics.UI.GLFW as G
 import Graphics.Rendering.OpenGL
 import Graphics.GLUtil
-import Graphics.GLUtil.Camera3D
 
 import Control.Monad.Trans.Class
 import Control.Monad.Trans.Either
@@ -45,7 +44,7 @@ graph = do
 
         return $ \vbd -> do
             makeContextCurrent (Just win)
-            clear [ColorBuffer, DepthBuffer]
+            clear [ColorBuffer]
             withArray vbd $ \ptr -> 
                 bufferData ArrayBuffer $= (fromIntegral $ length vbd * sizeOf (head vbd), ptr, StaticDraw)
             drawArrays LineStrip 0 (fromIntegral $ length vbd `quot` 2)
