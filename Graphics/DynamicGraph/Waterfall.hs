@@ -1,4 +1,4 @@
-module DynamicGraph.Waterfall where
+module Graphics.DynamicGraph.Waterfall where
 
 import Control.Monad
 import Graphics.UI.GLFW as G

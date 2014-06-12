@@ -1,5 +1,5 @@
 {-# LANGUAGE ScopedTypeVariables #-}
-module DynamicGraph.SimpleLine where
+module Graphics.DynamicGraph.SimpleLine where
 
 import Control.Monad
 import Graphics.UI.GLFW as G

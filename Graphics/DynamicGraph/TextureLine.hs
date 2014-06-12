@@ -1,4 +1,4 @@
-module DynamicGraph.TextureLine where
+module Graphics.DynamicGraph.TextureLine where
 
 import Control.Monad
 import Graphics.UI.GLFW as G

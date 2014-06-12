@@ -1,4 +1,4 @@
-module DynamicGraph.Util where
+module Graphics.DynamicGraph.Util where
 
 import Control.Monad
 import Control.Monad.Trans.Class
