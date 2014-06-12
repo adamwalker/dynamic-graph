@@ -9,7 +9,6 @@ import Graphics.GLUtil
 import Control.Monad.Trans.Class
 import Control.Monad.Trans.Either
 import Foreign.Storable
-import Foreign.Marshal.Array
 import Foreign.Ptr
 
 import Paths_dynamic_graph
