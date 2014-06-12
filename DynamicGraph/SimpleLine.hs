@@ -1,3 +1,4 @@
+{-# LANGUAGE ScopedTypeVariables #-}
 module DynamicGraph.SimpleLine where
 
 import Control.Monad
@@ -9,11 +10,12 @@ import Control.Monad.Trans.Class
 import Control.Monad.Trans.Either
 import Foreign.Storable
 import Foreign.Marshal.Array
+import Foreign.Ptr
 
 import Paths_dynamic_graph
 
-graph :: Storable a => Int -> Int -> EitherT String IO ([a] -> IO ())
-graph width height = do
+graph :: forall a. Storable a => Int -> Int -> Int -> EitherT String IO (Ptr a -> IO ())
+graph width height bufLen = do
     res' <- lift $ createWindow width height "" Nothing Nothing
     win <- maybe (left "error creating window") return res'
 
@@ -42,11 +44,10 @@ graph width height = do
         vertexAttribArray   loc $= Enabled
         vertexAttribPointer loc $= (ToFloat, vad)
 
-        return $ \vbd -> do
+        return $ \ptr -> do
             makeContextCurrent (Just win)
             clear [ColorBuffer]
-            withArray vbd $ \ptr -> 
-                bufferData ArrayBuffer $= (fromIntegral $ length vbd * sizeOf (head vbd), ptr, StaticDraw)
-            drawArrays LineStrip 0 (fromIntegral $ length vbd `quot` 2)
+            bufferData ArrayBuffer $= (fromIntegral $ 2 * bufLen * sizeOf (undefined :: a), ptr, StaticDraw)
+            drawArrays LineStrip 0 (fromIntegral bufLen)
             swapBuffers win
 
