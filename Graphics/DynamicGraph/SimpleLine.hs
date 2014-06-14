@@ -1,5 +1,3 @@
-{-# LANGUAGE ScopedTypeVariables #-}
-
 {-| Draw and update line graphs with OpenGL.
 
     Based on: <https://en.wikibooks.org/wiki/OpenGL_Programming/Scientific_OpenGL_Tutorial_01>
@@ -29,7 +27,7 @@ import Paths_dynamic_graph
     y\> coordinates for updating the graph as this is the format that
     OpenGL requires.
 -}
-graph :: forall a. Storable a => Int -> Int -> Int -> EitherT String IO (Ptr a -> IO ())
+graph :: Int -> Int -> Int -> EitherT String IO (Ptr GLfloat -> IO ())
 graph width height bufLen = do
     res' <- lift $ createWindow width height "" Nothing Nothing
     win <- maybe (left "error creating window") return res'
@@ -62,7 +60,7 @@ graph width height bufLen = do
         return $ \ptr -> do
             makeContextCurrent (Just win)
             clear [ColorBuffer]
-            bufferData ArrayBuffer $= (fromIntegral $ 2 * bufLen * sizeOf (undefined :: a), ptr, StaticDraw)
+            bufferData ArrayBuffer $= (fromIntegral $ 2 * bufLen * sizeOf (undefined :: GLfloat), ptr, StaticDraw)
             drawArrays LineStrip 0 (fromIntegral bufLen)
             swapBuffers win
 
