@@ -1,4 +1,11 @@
-module Graphics.DynamicGraph.TextureLine where
+{-| Draw and update line graphs with OpenGL.
+
+    Based on: <https://en.wikibooks.org/wiki/OpenGL_Programming/Scientific_OpenGL_Tutorial_02>
+-}
+module Graphics.DynamicGraph.TextureLine (
+    graph,
+    graphAsConsumer
+    ) where
 
 import Control.Monad
 import Graphics.UI.GLFW as G
@@ -14,6 +21,12 @@ import Pipes
 
 import Paths_dynamic_graph
 
+{-| @(graph windowWidth windowHeight samples xResolution)@ creates a window
+    of width @windowWidth@ and height @windowHeight@ for displaying a line
+    graph. A function is returned for updating the line graph. It takes an
+    instance of IsPixelData of length @samples@ as the y values and draws
+    a line graph with @xResolution@ vertices. 
+-}
 graph :: IsPixelData a => Int -> Int -> Int -> Int -> EitherT String IO (a -> IO ())
 graph width height samples xResolution = do
     res' <- lift $ createWindow width height "" Nothing Nothing
@@ -78,6 +91,7 @@ graph width height samples xResolution = do
 toConsumer :: Monad m => (a -> m b) -> Consumer a m ()
 toConsumer func = forever $ await >>= lift . func
 
-graphAsComsumer :: IsPixelData a => Int -> Int -> Int -> Int -> EitherT String IO (Consumer a IO ())
-graphAsComsumer width height samples xResolution = liftM toConsumer $ graph width height samples xResolution
+-- | Same as above, but returns a Consumer instead of an update function
+graphAsConsumer :: IsPixelData a => Int -> Int -> Int -> Int -> EitherT String IO (Consumer a IO ())
+graphAsConsumer width height samples xResolution = liftM toConsumer $ graph width height samples xResolution
 

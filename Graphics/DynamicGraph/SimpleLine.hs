@@ -1,5 +1,14 @@
 {-# LANGUAGE ScopedTypeVariables #-}
-module Graphics.DynamicGraph.SimpleLine where
+
+{-| Draw and update line graphs with OpenGL.
+
+    Based on: <https://en.wikibooks.org/wiki/OpenGL_Programming/Scientific_OpenGL_Tutorial_01>
+
+    You probably want to use "Graphics.DynamicGraph.TextureLine" as it is better.
+-}
+module Graphics.DynamicGraph.SimpleLine (
+    graph
+    ) where
 
 import Control.Monad
 import Graphics.UI.GLFW as G
@@ -13,6 +22,13 @@ import Foreign.Ptr
 
 import Paths_dynamic_graph
 
+{-| @(graph windowWidth windowHeight bufLen)@ creates a window
+    of width @windowWidth@ and height @windowHeight@ for displaying a line
+    graph. A function is returned for updating the line graph. It takes
+    a pointer to a c array of length @bufLen@ consisting of pairs of \<x,
+    y\> coordinates for updating the graph as this is the format that
+    OpenGL requires.
+-}
 graph :: forall a. Storable a => Int -> Int -> Int -> EitherT String IO (Ptr a -> IO ())
 graph width height bufLen = do
     res' <- lift $ createWindow width height "" Nothing Nothing

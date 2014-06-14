@@ -1,4 +1,13 @@
-module Graphics.DynamicGraph.Waterfall where
+{-| Draw and update waterfall plots with OpenGL. Useful for spectrograms.
+-}
+module Graphics.DynamicGraph.Waterfall (
+    jet,
+    jet_mod,
+    hot,
+    bw,
+    wb,
+    graph
+    ) where
 
 import Control.Monad
 import Graphics.UI.GLFW as G
@@ -14,27 +23,34 @@ import Pipes
 
 import Paths_dynamic_graph
 
+-- | The matlab / octave \"jet\" color map
 jet :: [GLfloat]
 jet =  [0, 0, 0.5,  0, 0, 1,  0, 0.5, 1,   0, 1, 1,  0.5, 1, 0.5,  1, 1, 0,  1, 0.5, 0,  1, 0, 0,  0.5, 0, 0]
 
+-- | \"jet\" modified so that low values are a darker blue
 jet_mod :: [GLfloat]
 jet_mod =  [0, 0, 0.1,  0, 0, 1,  0, 0.5, 1,   0, 1, 1,  0.5, 1, 0.5,  1, 1, 0,  1, 0.5, 0,  1, 0, 0,  0.5, 0, 0]
 
+-- | The matlab / octave \"hot\" color map
 hot :: [GLfloat]
 hot =  [0, 0, 0,  1, 0, 0,  1, 1, 0,  1, 1, 1]
 
+-- | Ranges from black to white
 bw :: [GLfloat]
 bw =  [0, 0, 0, 1, 1, 1]
 
-bw' :: [GLfloat]
-bw' =  [1, 1, 1, 0, 0, 0]
+-- | Ranges from white to black
+wb :: [GLfloat]
+wb =  [1, 1, 1, 0, 0, 0]
 
-blue :: [GLfloat]
-blue =  [0, 0, 0, 0, 0, 1]
-
-blue' :: [GLfloat]
-blue' =  [0, 0, 1, 0, 0, 0]
-
+{-| @(graph windowWidth windowHeight width height colormap)@ creates
+    a window of width @windowWidth@ and height @windowHeight@ for displaying
+    a waterfall plot. A Consumer is returned for updating the waterfall
+    plot. Feeding an instance of IsPixelData of length @width@ shifts all
+    rows of the waterfall down and updates the top row with the data. The
+    waterfall is @height@ rows high. @colorMap@ is used to map values to
+    display color.
+-}
 graph :: IsPixelData a => Int -> Int -> Int -> Int -> [GLfloat] -> EitherT String IO (Consumer a IO ())
 graph windowWidth windowHeight width height colorMap = do
     res' <- lift $ createWindow windowWidth windowHeight "" Nothing Nothing
