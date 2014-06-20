@@ -26,8 +26,9 @@ import Paths_dynamic_graph
     instance of IsPixelData of length @samples@ as the y values and draws
     a line graph with @xResolution@ vertices. 
 -}
-graph :: IsPixelData a => Int -> Int -> Int -> EitherT String IO (a -> IO ())
-graph width height samples = do
+graph :: IsPixelData a => Int -> Int -> Int -> [GLfloat] -> EitherT String IO (a -> IO ())
+graph width height samples colorMap = do
+
     res' <- lift $ createWindow width height "" Nothing Nothing
     win <- maybe (left "error creating window") return res'
 
@@ -65,12 +66,38 @@ graph width height samples = do
         let yCoords :: [GLfloat]
             yCoords = take samples $ repeat 0
 
+        activeTexture $= TextureUnit 0
+        texture Texture2D $= Enabled
         to <- loadTexture (TexInfo (fromIntegral samples) 1 TexMono yCoords)
+
+        loc <- get $ uniformLocation p "texture"
+        asUniform (0 :: GLint) loc 
         
         textureFilter Texture2D $= ((Linear', Nothing), Linear')
+        textureWrapMode Texture2D S $= (Repeated, ClampToEdge)
+        textureWrapMode Texture2D T $= (Repeated, Repeat)
 
+        --The color map
+        activeTexture $= TextureUnit 1
+        texture Texture2D $= Enabled
+        loadTexture (TexInfo (fromIntegral $ length colorMap `quot` 3) 1 TexRGB colorMap)
+        textureFilter Texture2D $= ((Linear', Nothing), Linear')
         textureWrapMode Texture2D S $= (Repeated, ClampToEdge)
         textureWrapMode Texture2D T $= (Repeated, ClampToEdge)
+
+        loc <- get $ uniformLocation p "colorMap"
+        asUniform (1 :: GLint) loc 
+
+        let lcm :: GLfloat
+            lcm = fromIntegral $ length colorMap `quot` 3
+        loc <- get $ uniformLocation p "scale"
+        asUniform ((lcm - 1) / lcm) loc 
+
+        loc <- get $ uniformLocation p "offset"
+        asUniform (0.5 / lcm) loc 
+        
+        --No idea why this is needed
+        activeTexture $= TextureUnit 0
 
         return $ \vbd -> do
             makeContextCurrent (Just win)
