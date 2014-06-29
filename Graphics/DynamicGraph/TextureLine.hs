@@ -19,7 +19,8 @@ import Foreign.Marshal.Array
 
 import Pipes
 
-import Graphics.DynamicGraph.RenderAxis
+import Graphics.DynamicGraph.RenderCairo
+import Graphics.DynamicGraph.Axis
 
 import Paths_dynamic_graph
 
@@ -40,7 +41,8 @@ graph width height samples xResolution = do
 
     renderFunc <- lift $ graph' samples xResolution
 
-    renderAxisFunc <- lift $ renderAxis width height
+    let rm = renderAxes (defaultConfiguration {width = fromIntegral width, height = fromIntegral height})
+    renderAxisFunc <- lift $ renderCairo rm width height
 
     return $ \dat -> do
         makeContextCurrent (Just win)

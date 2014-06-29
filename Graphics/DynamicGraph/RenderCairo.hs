@@ -1,4 +1,4 @@
-module Graphics.DynamicGraph.RenderAxis where
+module Graphics.DynamicGraph.RenderCairo where
 
 import Control.Monad
 import Graphics.UI.GLFW as G
@@ -19,16 +19,14 @@ import Graphics.Rendering.Pango
 import qualified Data.ByteString as BS
 import Data.ByteString (ByteString)
 
-import Graphics.DynamicGraph.Axis
-
 import Paths_dynamic_graph
 
-renderAxis :: Int -> Int -> IO (IO ())
-renderAxis width height = do
+renderCairo :: Render a -> Int -> Int -> IO (IO ())
+renderCairo rm width height = do
 
     --Render the graph to a ByteString
     dat <- withImageSurface FormatARGB32 width height $ \surface -> do
-        (renderAxes (defaultConfiguration {width = fromIntegral width, height = fromIntegral height}) surface) 
+        renderWith surface rm 
         imageSurfaceGetData surface
 
     --Load the shaders
