@@ -4,7 +4,7 @@
 -}
 module Graphics.DynamicGraph.TextureLine (
     graph,
-    graphAsConsumer
+    graph'
     ) where
 
 import Control.Monad
@@ -38,21 +38,14 @@ graph width height samples xResolution = do
     lift $ makeContextCurrent (Just win)
     mtu <- lift $ get maxVertexTextureImageUnits
     when (mtu <= 0) $ left "No texture units accessible from vertex shader"
+    lift $ clearColor $= Color4 0 0 0 0
 
     renderFunc <- lift $ graph' samples xResolution
 
-    let rm = renderAxes (defaultConfiguration {width = fromIntegral width, height = fromIntegral height})
-    renderAxisFunc <- lift $ renderCairo rm width height
-
     return $ \dat -> do
         makeContextCurrent (Just win)
-
-        viewport $= (Position 0 0, Size (fromIntegral width) (fromIntegral height))
-        renderAxisFunc
-
-        viewport $= (Position 50 50, Size (fromIntegral width - 100) (fromIntegral height - 100))
+        clear [ColorBuffer]
         renderFunc dat
-
         swapBuffers win
 
 graph' :: IsPixelData a => Int -> Int -> IO (a -> IO())
@@ -104,11 +97,4 @@ graph' samples xResolution = do
         textureBinding Texture2D $= Just to
         reloadTexture to (TexInfo (fromIntegral samples) 1 TexMono vbd)
         drawArrays LineStrip 0 (fromIntegral xResolution)
-
-toConsumer :: Monad m => (a -> m b) -> Consumer a m ()
-toConsumer func = forever $ await >>= lift . func
-
--- | Same as above, but returns a Consumer instead of an update function
-graphAsConsumer :: IsPixelData a => Int -> Int -> Int -> Int -> EitherT String IO (Consumer a IO ())
-graphAsConsumer width height samples xResolution = liftM toConsumer $ graph width height samples xResolution
 

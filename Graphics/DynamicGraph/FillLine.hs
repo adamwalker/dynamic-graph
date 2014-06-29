@@ -4,6 +4,7 @@
 -}
 module Graphics.DynamicGraph.FillLine (
     graph,
+    graph'
     ) where
 
 import Control.Monad
