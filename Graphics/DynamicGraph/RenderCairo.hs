@@ -1,4 +1,6 @@
-module Graphics.DynamicGraph.RenderCairo where
+module Graphics.DynamicGraph.RenderCairo (
+    renderCairo
+    ) where
 
 import Control.Monad
 import Graphics.UI.GLFW as G

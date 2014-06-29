@@ -6,7 +6,8 @@ module Graphics.DynamicGraph.Waterfall (
     hot,
     bw,
     wb,
-    graph
+    waterfallWindow,
+    renderWaterfall
     ) where
 
 import Control.Monad
@@ -51,20 +52,20 @@ wb =  [1, 1, 1, 0, 0, 0]
     waterfall is @height@ rows high. @colorMap@ is used to map values to
     display color.
 -}
-graph :: IsPixelData a => Int -> Int -> Int -> Int -> [GLfloat] -> EitherT String IO (Consumer a IO ())
-graph windowWidth windowHeight width height colorMap = do
+waterfallWindow :: IsPixelData a => Int -> Int -> Int -> Int -> [GLfloat] -> EitherT String IO (Consumer a IO ())
+waterfallWindow windowWidth windowHeight width height colorMap = do
     res' <- lift $ createWindow windowWidth windowHeight "" Nothing Nothing
     win <- maybe (left "error creating window") return res'
     lift $ makeContextCurrent (Just win)
-    renderPipe <- lift $ graph' width height colorMap
+    renderPipe <- lift $ renderWaterfall width height colorMap
     return $ (<-<) renderPipe $ forever $ do 
         dat <- await
         lift $ makeContextCurrent (Just win)
         yield dat
         lift $ swapBuffers win
 
-graph' :: IsPixelData a => Int -> Int -> [GLfloat] -> IO (Consumer a IO ())
-graph' width height colorMap = do
+renderWaterfall :: IsPixelData a => Int -> Int -> [GLfloat] -> IO (Consumer a IO ())
+renderWaterfall width height colorMap = do
     --Load the shaders
     vertFN <- getDataFileName "shaders/waterfall.vert"
     fragFN <- getDataFileName "shaders/waterfall.frag"

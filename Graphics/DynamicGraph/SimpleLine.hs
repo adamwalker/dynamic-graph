@@ -5,7 +5,7 @@
     You probably want to use "Graphics.DynamicGraph.TextureLine" as it is better.
 -}
 module Graphics.DynamicGraph.SimpleLine (
-    graph
+    simpleLineWindow
     ) where
 
 import Control.Monad
@@ -20,15 +20,15 @@ import Foreign.Ptr
 
 import Paths_dynamic_graph
 
-{-| @(graph windowWidth windowHeight bufLen)@ creates a window
+{-| @(simpleLineWindow windowWidth windowHeight bufLen)@ creates a window
     of width @windowWidth@ and height @windowHeight@ for displaying a line
     graph. A function is returned for updating the line graph. It takes
     a pointer to a c array of length @bufLen@ consisting of pairs of \<x,
     y\> coordinates for updating the graph as this is the format that
     OpenGL requires.
 -}
-graph :: Int -> Int -> Int -> EitherT String IO (Ptr GLfloat -> IO ())
-graph width height bufLen = do
+simpleLineWindow :: Int -> Int -> Int -> EitherT String IO (Ptr GLfloat -> IO ())
+simpleLineWindow width height bufLen = do
     res' <- lift $ createWindow width height "" Nothing Nothing
     win <- maybe (left "error creating window") return res'
 

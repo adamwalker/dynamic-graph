@@ -3,8 +3,8 @@
     Based on: <https://en.wikibooks.org/wiki/OpenGL_Programming/Scientific_OpenGL_Tutorial_02>
 -}
 module Graphics.DynamicGraph.FillLine (
-    graph,
-    graph'
+    filledLineWindow,
+    renderFilledLine
     ) where
 
 import Control.Monad
@@ -21,20 +21,14 @@ import Pipes
 
 import Paths_dynamic_graph
 
-{-| @(graph windowWidth windowHeight samples xResolution)@ creates a window
-    of width @windowWidth@ and height @windowHeight@ for displaying a line
-    graph. A function is returned for updating the line graph. It takes an
-    instance of IsPixelData of length @samples@ as the y values and draws
-    a line graph with @xResolution@ vertices. 
--}
-graph :: IsPixelData a => Int -> Int -> Int -> [GLfloat] -> EitherT String IO (a -> IO ())
-graph width height samples colorMap = do
+filledLineWindow :: IsPixelData a => Int -> Int -> Int -> [GLfloat] -> EitherT String IO (a -> IO ())
+filledLineWindow width height samples colorMap = do
     res' <- lift $ createWindow width height "" Nothing Nothing
     win <- maybe (left "error creating window") return res'
 
     lift $ makeContextCurrent (Just win)
 
-    renderFunc <- lift $ graph' samples colorMap
+    renderFunc <- lift $ renderFilledLine samples colorMap
 
     lift $ clearColor $= Color4 0 0 0 0
 
@@ -44,8 +38,8 @@ graph width height samples colorMap = do
         renderFunc dat
         swapBuffers win
 
-graph' :: IsPixelData a => Int -> [GLfloat] -> IO (a -> IO ())
-graph' samples colorMap = do
+renderFilledLine :: IsPixelData a => Int -> [GLfloat] -> IO (a -> IO ())
+renderFilledLine samples colorMap = do
     --Load the shaders
     vertFN <- getDataFileName "shaders/fill_line.vert"
     fragFN <- getDataFileName "shaders/fill_line.frag"

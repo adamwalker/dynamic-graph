@@ -3,8 +3,8 @@
     Based on: <https://en.wikibooks.org/wiki/OpenGL_Programming/Scientific_OpenGL_Tutorial_02>
 -}
 module Graphics.DynamicGraph.TextureLine (
-    graph,
-    graph'
+    textureLineWindow,
+    renderTextureLine
     ) where
 
 import Control.Monad
@@ -30,8 +30,8 @@ import Paths_dynamic_graph
     instance of IsPixelData of length @samples@ as the y values and draws
     a line graph with @xResolution@ vertices. 
 -}
-graph :: IsPixelData a => Int -> Int -> Int -> Int -> EitherT String IO (a -> IO ())
-graph width height samples xResolution = do
+textureLineWindow :: IsPixelData a => Int -> Int -> Int -> Int -> EitherT String IO (a -> IO ())
+textureLineWindow width height samples xResolution = do
     res' <- lift $ createWindow width height "" Nothing Nothing
     win <- maybe (left "error creating window") return res'
 
@@ -40,7 +40,7 @@ graph width height samples xResolution = do
     when (mtu <= 0) $ left "No texture units accessible from vertex shader"
     lift $ clearColor $= Color4 0 0 0 0
 
-    renderFunc <- lift $ graph' samples xResolution
+    renderFunc <- lift $ renderTextureLine samples xResolution
 
     return $ \dat -> do
         makeContextCurrent (Just win)
@@ -48,8 +48,8 @@ graph width height samples xResolution = do
         renderFunc dat
         swapBuffers win
 
-graph' :: IsPixelData a => Int -> Int -> IO (a -> IO())
-graph' samples xResolution = do
+renderTextureLine :: IsPixelData a => Int -> Int -> IO (a -> IO())
+renderTextureLine samples xResolution = do
     --Load the shaders
     vertFN <- getDataFileName "shaders/texture_line.vert"
     fragFN <- getDataFileName "shaders/texture_line.frag"
