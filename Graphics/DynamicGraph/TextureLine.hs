@@ -19,6 +19,8 @@ import Foreign.Marshal.Array
 
 import Pipes
 
+import Graphics.DynamicGraph.RenderAxis
+
 import Paths_dynamic_graph
 
 {-| @(graph windowWidth windowHeight samples xResolution)@ creates a window
@@ -36,57 +38,70 @@ graph width height samples xResolution = do
     mtu <- lift $ get maxVertexTextureImageUnits
     when (mtu <= 0) $ left "No texture units accessible from vertex shader"
 
-    lift $ do
-        --Load the shaders
-        vertFN <- getDataFileName "shaders/texture_line.vert"
-        fragFN <- getDataFileName "shaders/texture_line.frag"
-        vs <- loadShader VertexShader   vertFN
-        fs <- loadShader FragmentShader fragFN
-        p  <- linkShaderProgram [vs, fs]
+    renderFunc <- lift $ graph' samples xResolution
 
-        --Set stuff
-        clearColor $= Color4 1 1 1 1
-        currentProgram $= Just p
+    renderAxisFunc <- lift $ renderAxis width height
 
-        ab <- genObjectName 
+    return $ \dat -> do
+        makeContextCurrent (Just win)
 
-        loc <- get $ attribLocation p "coord"
+        viewport $= (Position 0 0, Size (fromIntegral width) (fromIntegral height))
+        renderAxisFunc
 
-        let stride = fromIntegral $ sizeOf (undefined::GLfloat) 
-            vad    = VertexArrayDescriptor 1 Float stride offset0
+        viewport $= (Position 50 50, Size (fromIntegral width - 100) (fromIntegral height - 100))
+        renderFunc dat
 
-        bindBuffer ArrayBuffer  $= Just ab
-        vertexAttribArray   loc $= Enabled
-        vertexAttribPointer loc $= (ToFloat, vad)
+        swapBuffers win
 
-        let xCoords :: [GLfloat]
-            xCoords = take xResolution $ iterate (+ 2 / fromIntegral xResolution) (-1)
-        withArray xCoords $ \ptr -> 
-            bufferData ArrayBuffer $= (fromIntegral $ sizeOf(undefined::GLfloat) * xResolution, ptr, StaticDraw)
+graph' :: IsPixelData a => Int -> Int -> IO (a -> IO())
+graph' samples xResolution = do
+    --Load the shaders
+    vertFN <- getDataFileName "shaders/texture_line.vert"
+    fragFN <- getDataFileName "shaders/texture_line.frag"
+    vs <- loadShader VertexShader   vertFN
+    fs <- loadShader FragmentShader fragFN
+    p  <- linkShaderProgram [vs, fs]
 
-        let yCoords :: [GLfloat]
-            yCoords = take samples $ repeat 0
+    --Set stuff
+    currentProgram $= Just p
 
-        --texture Texture2D $= Enabled
-        to <- loadTexture (TexInfo (fromIntegral samples) 1 TexMono yCoords)
-        
-        --activeTexture $= TextureUnit 0
-        --loc <- get $ uniformLocation p "texture"
-        --asUniform (0 :: GLint) loc 
+    ab <- genObjectName 
 
-        textureFilter Texture2D $= ((Linear', Nothing), Linear')
+    loc <- get $ attribLocation p "coord"
 
-        textureWrapMode Texture2D S $= (Repeated, ClampToEdge)
-        textureWrapMode Texture2D T $= (Repeated, ClampToEdge)
+    let stride = fromIntegral $ sizeOf (undefined::GLfloat) 
+        vad    = VertexArrayDescriptor 1 Float stride offset0
 
-        return $ \vbd -> do
-            makeContextCurrent (Just win)
-            clear [ColorBuffer]
+    bindBuffer ArrayBuffer  $= Just ab
+    vertexAttribArray   loc $= Enabled
+    vertexAttribPointer loc $= (ToFloat, vad)
 
-            reloadTexture to (TexInfo (fromIntegral samples) 1 TexMono vbd)
+    let xCoords :: [GLfloat]
+        xCoords = take xResolution $ iterate (+ 2 / fromIntegral xResolution) (-1)
+    withArray xCoords $ \ptr -> 
+        bufferData ArrayBuffer $= (fromIntegral $ sizeOf(undefined::GLfloat) * xResolution, ptr, StaticDraw)
 
-            drawArrays LineStrip 0 (fromIntegral xResolution)
-            swapBuffers win
+    let yCoords :: [GLfloat]
+        yCoords = take samples $ repeat 0
+
+    activeTexture $= TextureUnit 0
+    texture Texture2D $= Enabled
+    to <- loadTexture (TexInfo (fromIntegral samples) 1 TexMono yCoords)
+    
+    locc <- get $ uniformLocation p "texture"
+    asUniform (0 :: GLint) locc
+
+    textureFilter Texture2D     $= ((Linear', Nothing), Linear')
+    textureWrapMode Texture2D S $= (Repeated, ClampToEdge)
+    textureWrapMode Texture2D T $= (Repeated, ClampToEdge)
+
+    return $ \vbd -> do
+        currentProgram           $= Just p
+        bindBuffer ArrayBuffer   $= Just ab
+        vertexAttribPointer loc  $= (ToFloat, vad)
+        textureBinding Texture2D $= Just to
+        reloadTexture to (TexInfo (fromIntegral samples) 1 TexMono vbd)
+        drawArrays LineStrip 0 (fromIntegral xResolution)
 
 toConsumer :: Monad m => (a -> m b) -> Consumer a m ()
 toConsumer func = forever $ await >>= lift . func

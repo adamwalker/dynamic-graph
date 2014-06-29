@@ -55,88 +55,104 @@ graph :: IsPixelData a => Int -> Int -> Int -> Int -> [GLfloat] -> EitherT Strin
 graph windowWidth windowHeight width height colorMap = do
     res' <- lift $ createWindow windowWidth windowHeight "" Nothing Nothing
     win <- maybe (left "error creating window") return res'
+    lift $ makeContextCurrent (Just win)
+    renderPipe <- lift $ graph' width height colorMap
+    return $ (<-<) renderPipe $ forever $ do 
+        dat <- await
+        lift $ makeContextCurrent (Just win)
+        yield dat
+        lift $ swapBuffers win
 
-    lift $ do
-        makeContextCurrent (Just win)
+graph' :: IsPixelData a => Int -> Int -> [GLfloat] -> IO (Consumer a IO ())
+graph' width height colorMap = do
+    --Load the shaders
+    vertFN <- getDataFileName "shaders/waterfall.vert"
+    fragFN <- getDataFileName "shaders/waterfall.frag"
+    vs <- loadShader VertexShader   vertFN
+    fs <- loadShader FragmentShader fragFN
+    p  <- linkShaderProgram [vs, fs]
 
-        --Load the shaders
-        vertFN <- getDataFileName "shaders/waterfall.vert"
-        fragFN <- getDataFileName "shaders/waterfall.frag"
-        vs <- loadShader VertexShader   vertFN
-        fs <- loadShader FragmentShader fragFN
-        p  <- linkShaderProgram [vs, fs]
+    --Set stuff
+    currentProgram $= Just p
 
-        --Set stuff
-        currentProgram $= Just p
+    ab <- genObjectName 
 
-        ab <- genObjectName 
+    locc <- get $ attribLocation p "coord"
 
-        loc <- get $ attribLocation p "coord"
+    let stride = fromIntegral $ sizeOf (undefined::GLfloat) * 2
+        vad    = VertexArrayDescriptor 2 Float stride offset0
 
-        let stride = fromIntegral $ sizeOf (undefined::GLfloat) * 2
-            vad    = VertexArrayDescriptor 2 Float stride offset0
+    bindBuffer ArrayBuffer  $= Just ab
+    vertexAttribArray   locc $= Enabled
+    vertexAttribPointer locc $= (ToFloat, vad)
 
-        bindBuffer ArrayBuffer  $= Just ab
-        vertexAttribArray   loc $= Enabled
-        vertexAttribPointer loc $= (ToFloat, vad)
+    let xCoords :: [GLfloat]
+        xCoords = [-1, -1, 1, -1, 1, 1, -1, 1]
+    withArray xCoords $ \ptr -> 
+        bufferData ArrayBuffer $= (fromIntegral $ sizeOf(undefined::GLfloat) * 8, ptr, StaticDraw)
 
-        let xCoords :: [GLfloat]
-            xCoords = [-1, -1, 1, -1, 1, 1, -1, 1]
-        withArray xCoords $ \ptr -> 
-            bufferData ArrayBuffer $= (fromIntegral $ sizeOf(undefined::GLfloat) * 8, ptr, StaticDraw)
+    let yCoords :: [GLfloat]
+        yCoords = take (width * height) $ repeat 0
 
-        let yCoords :: [GLfloat]
-            yCoords = take (width * height) $ repeat 0
+    activeTexture $= TextureUnit 0
+    texture Texture2D $= Enabled
+    to0 <- loadTexture (TexInfo (fromIntegral width) (fromIntegral height) TexMono yCoords)
+    
+    loc <- get $ uniformLocation p "texture"
+    asUniform (0 :: GLint) loc
 
-        activeTexture $= TextureUnit 0
-        texture Texture2D $= Enabled
-        to <- loadTexture (TexInfo (fromIntegral width) (fromIntegral height) TexMono yCoords)
-        
-        loc <- get $ uniformLocation p "texture"
-        asUniform (0 :: GLint) loc 
+    textureFilter Texture2D $= ((Linear', Nothing), Linear')
+    textureWrapMode Texture2D S $= (Repeated, ClampToEdge)
+    textureWrapMode Texture2D T $= (Repeated, Repeat)
 
-        textureFilter Texture2D $= ((Linear', Nothing), Linear')
-        textureWrapMode Texture2D S $= (Repeated, ClampToEdge)
-        textureWrapMode Texture2D T $= (Repeated, Repeat)
+    activeTexture $= TextureUnit 1
+    texture Texture2D $= Enabled
+    to1 <- loadTexture (TexInfo (fromIntegral $ length colorMap `quot` 3) 1 TexRGB colorMap)
+    textureFilter Texture2D $= ((Linear', Nothing), Linear')
+    textureWrapMode Texture2D S $= (Repeated, ClampToEdge)
+    textureWrapMode Texture2D T $= (Repeated, ClampToEdge)
 
-        activeTexture $= TextureUnit 1
-        texture Texture2D $= Enabled
-        to <- loadTexture (TexInfo (fromIntegral $ length colorMap `quot` 3) 1 TexRGB colorMap)
-        textureFilter Texture2D $= ((Linear', Nothing), Linear')
-        textureWrapMode Texture2D S $= (Repeated, ClampToEdge)
-        textureWrapMode Texture2D T $= (Repeated, ClampToEdge)
+    loc <- get $ uniformLocation p "colorMap"
+    asUniform (1 :: GLint) loc 
 
-        loc <- get $ uniformLocation p "colorMap"
-        asUniform (1 :: GLint) loc 
+    let lcm :: GLfloat
+        lcm = fromIntegral $ length colorMap `quot` 3
+    loc <- get $ uniformLocation p "scale"
+    asUniform ((lcm - 1) / lcm) loc 
 
-        let lcm :: GLfloat
-            lcm = fromIntegral $ length colorMap `quot` 3
-        loc <- get $ uniformLocation p "scale"
-        asUniform ((lcm - 1) / lcm) loc 
+    loc <- get $ uniformLocation p "offset"
+    asUniform (0.5 / lcm) loc 
 
-        loc <- get $ uniformLocation p "offset"
-        asUniform (0.5 / lcm) loc 
+    loc <- get $ uniformLocation p "voffset"
 
-        --No idea why this is needed
-        activeTexture $= TextureUnit 0
+    let pipe yoffset = do
+            dat <- await
 
-        loc <- get $ uniformLocation p "voffset"
+            lift $ do
+                currentProgram $= Just p
 
-        let pipe yoffset = do
-                dat <- await
+                let textureOffset = (yoffset + height - 1) `mod` height
 
-                lift $ do
-                    makeContextCurrent (Just win)
+                withPixels dat $ \ptr -> 
+                    texSubImage2D Texture2D 0 (TexturePosition2D 0 (fromIntegral textureOffset)) (TextureSize2D (fromIntegral width) 1) (PixelData Red Float ptr)
 
-                    let textureOffset = (yoffset + height - 1) `mod` height
+                asUniform (fromIntegral yoffset / fromIntegral height :: GLfloat) loc
 
-                    withPixels dat $ \ptr -> texSubImage2D Texture2D 0 (TexturePosition2D 0 (fromIntegral textureOffset)) (TextureSize2D (fromIntegral width) 1) (PixelData Red Float ptr)
+                bindBuffer ArrayBuffer   $= Just ab
+                vertexAttribArray   locc $= Enabled
+                vertexAttribPointer locc $= (ToFloat, vad)
 
-                    asUniform (fromIntegral yoffset / fromIntegral height :: GLfloat) loc
+                activeTexture $= TextureUnit 0
+                textureBinding Texture2D $= Just to0
 
-                    drawArrays Quads 0 4
-                    swapBuffers win
+                activeTexture $= TextureUnit 1
+                textureBinding Texture2D $= Just to1
 
-                pipe $ if yoffset + 1 >= height then 0 else yoffset + 1
+                --No idea why this is needed
+                activeTexture $= TextureUnit 0
 
-        return $ pipe 0
+                drawArrays Quads 0 4
+
+            pipe $ if yoffset + 1 >= height then 0 else yoffset + 1
+
+    return $ pipe 0
