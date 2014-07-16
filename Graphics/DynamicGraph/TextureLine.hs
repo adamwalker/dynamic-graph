@@ -1,3 +1,4 @@
+{-# LANGUAGE ScopedTypeVariables #-}
 {-| Draw and update line graphs with OpenGL.
 
     Based on: <https://en.wikibooks.org/wiki/OpenGL_Programming/Scientific_OpenGL_Tutorial_02>
@@ -16,11 +17,15 @@ import Control.Monad.Trans.Class
 import Control.Monad.Trans.Either
 import Foreign.Storable
 import Foreign.Marshal.Array
+import Control.Concurrent
+import Control.Concurrent.MVar
+import Control.DeepSeq
 
 import Pipes
 
 import Graphics.DynamicGraph.RenderCairo
 import Graphics.DynamicGraph.Axis
+import Graphics.DynamicGraph.Util
 
 import Paths_dynamic_graph
 
@@ -30,23 +35,29 @@ import Paths_dynamic_graph
     instance of IsPixelData of length @samples@ as the y values and draws
     a line graph with @xResolution@ vertices. 
 -}
-textureLineWindow :: IsPixelData a => Int -> Int -> Int -> Int -> EitherT String IO (a -> IO ())
+textureLineWindow :: forall a. (IsPixelData a) => Int -> Int -> Int -> Int -> EitherT String IO (a -> IO ())
 textureLineWindow width height samples xResolution = do
-    res' <- lift $ createWindow width height "" Nothing Nothing
-    win <- maybe (left "error creating window") return res'
+    mv :: MVar a <- lift $ newEmptyMVar
 
-    lift $ makeContextCurrent (Just win)
-    mtu <- lift $ get maxVertexTextureImageUnits
-    when (mtu <= 0) $ left "No texture units accessible from vertex shader"
-    lift $ clearColor $= Color4 0 0 0 0
+    lift $ forkOS $ void $ runEitherT $ do
+        res' <- lift $ createWindow width height "" Nothing Nothing
+        win <- maybe (left "error creating window") return res'
 
-    renderFunc <- lift $ renderTextureLine samples xResolution
+        lift $ makeContextCurrent (Just win)
+        mtu <- lift $ get maxVertexTextureImageUnits
+        when (mtu <= 0) $ left "No texture units accessible from vertex shader"
+        lift $ clearColor $= Color4 0 0 0 0
 
-    return $ \dat -> do
-        makeContextCurrent (Just win)
-        clear [ColorBuffer]
-        renderFunc dat
-        swapBuffers win
+        (renderFunc :: a -> IO ()) <- lift $ renderTextureLine samples xResolution
+
+        lift $ forever $ do
+            dat <- takeMVar mv
+            makeContextCurrent (Just win)
+            clear [ColorBuffer]
+            renderFunc dat
+            swapBuffers win
+
+    return $ \x -> replaceMVar mv x
 
 renderTextureLine :: IsPixelData a => Int -> Int -> IO (a -> IO())
 renderTextureLine samples xResolution = do

@@ -1,10 +1,13 @@
 module Graphics.DynamicGraph.Util (
-    setupGLFW
+    setupGLFW,
+    replaceMVar
     ) where
 
 import Control.Monad
 import Control.Monad.Trans.Class
 import Control.Monad.Trans.Either
+import Control.Concurrent.MVar
+import Control.DeepSeq
 
 import Graphics.UI.GLFW as G
 
@@ -17,3 +20,9 @@ setupGLFW = do
 
     res <- lift $ G.init
     unless res (left "error initializing glfw")
+
+replaceMVar :: MVar a -> a -> IO ()
+replaceMVar mv val = do
+    tryTakeMVar mv
+    putMVar mv val
+
