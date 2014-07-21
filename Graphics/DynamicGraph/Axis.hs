@@ -115,6 +115,12 @@ drawAxes Configuration{..} = do
     lineTo (width - rightMargin) (height - bottomMargin)
     stroke
 
+gridXCoords :: Double -> Double -> Double -> Double -> Double -> [Double]
+gridXCoords width offset leftMargin rightMargin spacing = takeWhile (< (width - rightMargin)) $ iterate (+ spacing) (offset + leftMargin)
+
+gridYCoords :: Double -> Double -> Double -> Double -> Double -> [Double]
+gridYCoords height offset topMargin bottomMargin spacing = takeWhile (> topMargin) $ iterate (flip (-) spacing) (height - bottomMargin - offset)
+
 renderAxes c@Configuration{..} = do
     blankCanvas backgroundColor width height
     drawAxes c
@@ -124,10 +130,10 @@ renderAxes c@Configuration{..} = do
     --X grid
     whenMaybe xGridConfig $ \GridConfig{..} -> do
 
-        let gridXCoords = takeWhile (< (width - rightMargin)) $ iterate (+ gridSpacing) (gridOffset + leftMargin)
+        let gridXCoords' = gridXCoords width gridOffset leftMargin rightMargin gridSpacing
 
         --grid lines
-        forM gridXCoords $ \xCoord -> do
+        forM gridXCoords' $ \xCoord -> do
             uncurryRGB setSourceRGB (toSRGB gridColor)
             setLineWidth gridWidth
             setDash gridDash 0
@@ -136,17 +142,17 @@ renderAxes c@Configuration{..} = do
             stroke
 
         --axis labels
-        forM (zip gridLabels gridXCoords) $ \(label, xCoord) -> do
+        forM (zip gridLabels gridXCoords') $ \(label, xCoord) -> do
             uncurryRGB setSourceRGB (toSRGB textColor)
             layoutTopCentre ctx label xCoord (height - bottomMargin)
 
     --Y grid
     whenMaybe yGridConfig $ \GridConfig{..} -> do
 
-        let gridYCoords = takeWhile (> topMargin) $ iterate (flip (-) gridSpacing) (height - bottomMargin - gridOffset)
+        let gridYCoords' = gridYCoords height gridOffset topMargin bottomMargin gridSpacing 
 
         --grid lines
-        forM gridYCoords $ \yCoord -> do
+        forM gridYCoords' $ \yCoord -> do
             uncurryRGB setSourceRGB (toSRGB gridColor)
             setLineWidth gridWidth
             setDash gridDash 0
@@ -155,7 +161,7 @@ renderAxes c@Configuration{..} = do
             stroke
 
         --axis labels
-        forM (zip gridLabels gridYCoords) $ \(label, yCoord) -> do
+        forM (zip gridLabels gridYCoords') $ \(label, yCoord) -> do
             uncurryRGB setSourceRGB (toSRGB textColor)
             layoutRightCentre ctx label 50 yCoord
 
