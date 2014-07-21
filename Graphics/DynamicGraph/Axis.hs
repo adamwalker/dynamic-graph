@@ -92,11 +92,14 @@ layoutRightCentre ctx text x y = do
     moveTo (x - w) (y - h/2)
     showLayout layout
 
-renderAxes Configuration{..} = do
-    --set the background colour
-    uncurryRGB setSourceRGB (toSRGB backgroundColor)
+blankCanvas :: Colour Double -> Double -> Double -> Render ()
+blankCanvas colour width height  = do
+    uncurryRGB setSourceRGB (toSRGB colour)
     rectangle 0 0 width height
     fill
+
+renderAxes Configuration{..} = do
+    blankCanvas backgroundColor width height
 
     setLineCap  LineCapRound
     setLineJoin LineJoinRound
