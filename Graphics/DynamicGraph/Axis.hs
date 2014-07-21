@@ -121,6 +121,16 @@ gridXCoords width offset leftMargin rightMargin spacing = takeWhile (< (width - 
 gridYCoords :: Double -> Double -> Double -> Double -> Double -> [Double]
 gridYCoords height offset topMargin bottomMargin spacing = takeWhile (> topMargin) $ iterate (flip (-) spacing) (height - bottomMargin - offset)
 
+xAxisLabels :: PangoContext -> [String] -> [Double] -> Double -> Render ()
+xAxisLabels ctx gridLabels gridXCoords yCoord = 
+    forM_ (zip gridLabels gridXCoords) $ \(label, xCoord) -> do
+        layoutTopCentre ctx label xCoord yCoord
+
+yAxisLabels :: PangoContext -> [String] -> [Double] -> Double -> Render ()
+yAxisLabels ctx gridLabels gridYCoords xCoord = 
+    forM_ (zip gridLabels gridYCoords) $ \(label, yCoord) -> do
+        layoutRightCentre ctx label xCoord yCoord
+
 renderAxes c@Configuration{..} = do
     blankCanvas backgroundColor width height
     drawAxes c
@@ -142,9 +152,8 @@ renderAxes c@Configuration{..} = do
             stroke
 
         --axis labels
-        forM (zip gridLabels gridXCoords') $ \(label, xCoord) -> do
-            uncurryRGB setSourceRGB (toSRGB textColor)
-            layoutTopCentre ctx label xCoord (height - bottomMargin)
+        uncurryRGB setSourceRGB (toSRGB textColor)
+        xAxisLabels ctx gridLabels gridXCoords' (height - bottomMargin)
 
     --Y grid
     whenMaybe yGridConfig $ \GridConfig{..} -> do
@@ -161,7 +170,6 @@ renderAxes c@Configuration{..} = do
             stroke
 
         --axis labels
-        forM (zip gridLabels gridYCoords') $ \(label, yCoord) -> do
-            uncurryRGB setSourceRGB (toSRGB textColor)
-            layoutRightCentre ctx label 50 yCoord
+        uncurryRGB setSourceRGB (toSRGB textColor)
+        yAxisLabels ctx gridLabels gridYCoords' 50 
 
