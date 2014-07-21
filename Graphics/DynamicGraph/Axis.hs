@@ -80,6 +80,18 @@ makeLayout ctx text = liftIO $ do
     (_, rect) <- layoutGetExtents layout
     return (layout, rect)
 
+layoutTopCentre :: PangoContext -> String -> Double -> Double -> Render ()
+layoutTopCentre ctx text x y = do
+    (layout, PangoRectangle _ _ w _) <- makeLayout ctx text
+    moveTo (x - w/2) y
+    showLayout layout
+
+layoutRightCentre :: PangoContext -> String -> Double -> Double -> Render ()
+layoutRightCentre ctx text x y = do
+    (layout, PangoRectangle _ _ w h) <- makeLayout ctx text
+    moveTo (x - w) (y - h/2)
+    showLayout layout
+
 renderAxes Configuration{..} = do
     --set the background colour
     uncurryRGB setSourceRGB (toSRGB backgroundColor)
@@ -115,10 +127,8 @@ renderAxes Configuration{..} = do
             stroke
 
             --axis labels
-            (layout, PangoRectangle _ _ w _) <- makeLayout ctx label
-            moveTo (xCoord - w/2) (height - bottomMargin)
             uncurryRGB setSourceRGB (toSRGB textColor)
-            showLayout layout
+            layoutTopCentre ctx label xCoord (height - bottomMargin)
 
     --Y grid
     whenMaybe yGridConfig $ \GridConfig{..} -> do
@@ -132,10 +142,8 @@ renderAxes Configuration{..} = do
             stroke
 
             --axis labels
-            (layout, PangoRectangle _ _ w h) <- makeLayout ctx label
-            moveTo (50 - w) (yCoord - h/2)
             uncurryRGB setSourceRGB (toSRGB textColor)
-            showLayout layout
+            layoutRightCentre ctx label 50 yCoord
 
 {-
     layout <- liftIO $ do
