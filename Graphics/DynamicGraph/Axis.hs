@@ -98,9 +98,8 @@ blankCanvas colour width height  = do
     rectangle 0 0 width height
     fill
 
-renderAxes Configuration{..} = do
-    blankCanvas backgroundColor width height
-
+drawAxes :: Configuration -> Render ()
+drawAxes Configuration{..} = do
     setLineCap  LineCapRound
     setLineJoin LineJoinRound
     setLineWidth axisWidth
@@ -115,6 +114,10 @@ renderAxes Configuration{..} = do
     moveTo leftMargin (height - bottomMargin)
     lineTo (width - rightMargin) (height - bottomMargin)
     stroke
+
+renderAxes c@Configuration{..} = do
+    blankCanvas backgroundColor width height
+    drawAxes c
 
     ctx <- liftIO $ cairoCreateContext Nothing
 
