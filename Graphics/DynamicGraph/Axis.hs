@@ -131,6 +131,26 @@ yAxisLabels ctx gridLabels gridYCoords xCoord =
     forM_ (zip gridLabels gridYCoords) $ \(label, yCoord) -> do
         layoutRightCentre ctx label xCoord yCoord
 
+xAxisGrid :: Colour Double -> Double -> [Double] -> Double -> Double -> [Double] -> Render ()
+xAxisGrid gridColor gridWidth gridDash yStart yEnd gridXCoords = do
+    uncurryRGB setSourceRGB (toSRGB gridColor)
+    setLineWidth gridWidth
+    setDash gridDash 0
+    forM_ gridXCoords $ \xCoord -> do
+        moveTo xCoord yStart
+        lineTo xCoord yEnd
+        stroke
+
+yAxisGrid :: Colour Double -> Double -> [Double] -> Double -> Double -> [Double] -> Render ()
+yAxisGrid gridColor gridWidth gridDash xStart xEnd gridYCoords = do
+    uncurryRGB setSourceRGB (toSRGB gridColor)
+    setLineWidth gridWidth
+    setDash gridDash 0
+    forM_ gridYCoords $ \yCoord -> do
+        moveTo xStart yCoord
+        lineTo xEnd   yCoord
+        stroke
+
 renderAxes c@Configuration{..} = do
     blankCanvas backgroundColor width height
     drawAxes c
@@ -143,13 +163,7 @@ renderAxes c@Configuration{..} = do
         let gridXCoords' = gridXCoords width gridOffset leftMargin rightMargin gridSpacing
 
         --grid lines
-        forM gridXCoords' $ \xCoord -> do
-            uncurryRGB setSourceRGB (toSRGB gridColor)
-            setLineWidth gridWidth
-            setDash gridDash 0
-            moveTo xCoord (height - bottomMargin)
-            lineTo xCoord topMargin
-            stroke
+        xAxisGrid gridColor gridWidth gridDash (height - bottomMargin) topMargin gridXCoords'
 
         --axis labels
         uncurryRGB setSourceRGB (toSRGB textColor)
@@ -161,13 +175,7 @@ renderAxes c@Configuration{..} = do
         let gridYCoords' = gridYCoords height gridOffset topMargin bottomMargin gridSpacing 
 
         --grid lines
-        forM gridYCoords' $ \yCoord -> do
-            uncurryRGB setSourceRGB (toSRGB gridColor)
-            setLineWidth gridWidth
-            setDash gridDash 0
-            moveTo (width - rightMargin) yCoord
-            lineTo leftMargin yCoord
-            stroke
+        yAxisGrid gridColor gridWidth gridDash (width - rightMargin) leftMargin gridYCoords'
 
         --axis labels
         uncurryRGB setSourceRGB (toSRGB textColor)
