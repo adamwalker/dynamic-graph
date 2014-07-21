@@ -72,6 +72,14 @@ defaultConfiguration = Configuration {..}
 whenMaybe :: (Functor m, Monad m) => Maybe a -> (a -> m b) -> m ()
 whenMaybe mb func = maybe (return ()) (void . func) mb
 
+-- Make a pango layout, fill it with text and return its extents
+makeLayout :: PangoContext -> String -> Render (PangoLayout, PangoRectangle)
+makeLayout ctx text = liftIO $ do
+    layout <- layoutEmpty ctx
+    layoutSetMarkup layout text
+    (_, rect) <- layoutGetExtents layout
+    return (layout, rect)
+
 renderAxes Configuration{..} = do
     --set the background colour
     uncurryRGB setSourceRGB (toSRGB backgroundColor)
@@ -107,11 +115,7 @@ renderAxes Configuration{..} = do
             stroke
 
             --axis labels
-            layout <- liftIO $ do
-                layout <- layoutEmpty ctx
-                layoutSetMarkup layout label
-                return layout
-            (_, PangoRectangle _ _ w _) <- liftIO $ layoutGetExtents layout
+            (layout, PangoRectangle _ _ w _) <- makeLayout ctx label
             moveTo (xCoord - w/2) (height - bottomMargin)
             uncurryRGB setSourceRGB (toSRGB textColor)
             showLayout layout
@@ -128,11 +132,7 @@ renderAxes Configuration{..} = do
             stroke
 
             --axis labels
-            layout <- liftIO $ do
-                layout <- layoutEmpty ctx
-                layoutSetMarkup layout label
-                return layout
-            (_, PangoRectangle _ _ w h) <- liftIO $ layoutGetExtents layout
+            (layout, PangoRectangle _ _ w h) <- makeLayout ctx label
             moveTo (50 - w) (yCoord - h/2)
             uncurryRGB setSourceRGB (toSRGB textColor)
             showLayout layout
