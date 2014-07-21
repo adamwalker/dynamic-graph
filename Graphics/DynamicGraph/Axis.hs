@@ -145,13 +145,3 @@ renderAxes Configuration{..} = do
             uncurryRGB setSourceRGB (toSRGB textColor)
             layoutRightCentre ctx label 50 yCoord
 
-{-
-    layout <- liftIO $ do
-        layout <- layoutEmpty ctx
-        layoutSetMarkup layout "Title"
-        return layout
-    (_, PangoRectangle _ _ w h) <- liftIO $ layoutGetExtents layout
-    moveTo ((width - w) / 2) 0
-    showLayout layout
--}
-
