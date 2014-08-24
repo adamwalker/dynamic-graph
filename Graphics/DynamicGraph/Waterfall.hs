@@ -1,3 +1,4 @@
+{-# LANGUAGE ScopedTypeVariables #-}
 {-| Draw and update waterfall plots with OpenGL. Useful for spectrograms.
 -}
 module Graphics.DynamicGraph.Waterfall (
@@ -11,6 +12,8 @@ module Graphics.DynamicGraph.Waterfall (
     ) where
 
 import Control.Monad
+import Control.Concurrent hiding (yield)
+import Control.Concurrent.MVar
 import Graphics.UI.GLFW as G
 import Graphics.Rendering.OpenGL
 import Graphics.GLUtil
@@ -21,6 +24,8 @@ import Foreign.Storable
 import Foreign.Marshal.Array
 
 import Pipes
+
+import Graphics.DynamicGraph.Util
 
 import Paths_dynamic_graph
 
@@ -52,17 +57,23 @@ wb =  [1, 1, 1, 0, 0, 0]
     waterfall is @height@ rows high. @colorMap@ is used to map values to
     display color.
 -}
-waterfallWindow :: IsPixelData a => Int -> Int -> Int -> Int -> [GLfloat] -> EitherT String IO (Consumer a IO ())
+waterfallWindow :: IsPixelData a => Int -> Int -> Int -> Int -> [GLfloat] -> EitherT String IO (a -> IO ())
 waterfallWindow windowWidth windowHeight width height colorMap = do
-    res' <- lift $ createWindow windowWidth windowHeight "" Nothing Nothing
-    win <- maybe (left "error creating window") return res'
-    lift $ makeContextCurrent (Just win)
-    renderPipe <- lift $ renderWaterfall width height colorMap
-    return $ (<-<) renderPipe $ forever $ do 
-        dat <- await
+    mv :: MVar a <- lift $ newEmptyMVar
+
+    lift $ forkOS $ void $ runEitherT $ do
+        res' <- lift $ createWindow windowWidth windowHeight "" Nothing Nothing
+        win <- maybe (left "error creating window") return res'
         lift $ makeContextCurrent (Just win)
-        yield dat
-        lift $ swapBuffers win
+        renderPipe <- lift $ renderWaterfall width height colorMap
+        let thePipe = (<-<) renderPipe $ forever $ do 
+                dat <- lift $ takeMVar mv
+                lift $ makeContextCurrent (Just win)
+                yield dat
+                lift $ swapBuffers win
+        lift $ runEffect thePipe
+
+    return $ \x -> replaceMVar mv x
 
 renderWaterfall :: IsPixelData a => Int -> Int -> [GLfloat] -> IO (Consumer a IO ())
 renderWaterfall width height colorMap = do
