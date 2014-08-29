@@ -1,7 +1,4 @@
-{-| Draw and update line graphs with OpenGL.
-
-    Based on: <https://en.wikibooks.org/wiki/OpenGL_Programming/Scientific_OpenGL_Tutorial_02>
--}
+{-# LANGUAGE ScopedTypeVariables #-}
 module Graphics.DynamicGraph.FillLine (
     filledLineWindow,
     renderFilledLine
@@ -16,27 +13,36 @@ import Control.Monad.Trans.Class
 import Control.Monad.Trans.Either
 import Foreign.Storable
 import Foreign.Marshal.Array
+import Control.Concurrent
+import Control.Concurrent.MVar
 
 import Pipes
+
+import Graphics.DynamicGraph.Util
 
 import Paths_dynamic_graph
 
 filledLineWindow :: IsPixelData a => Int -> Int -> Int -> [GLfloat] -> EitherT String IO (a -> IO ())
 filledLineWindow width height samples colorMap = do
-    res' <- lift $ createWindow width height "" Nothing Nothing
-    win <- maybe (left "error creating window") return res'
+    mv :: MVar a <- lift $ newEmptyMVar
 
-    lift $ makeContextCurrent (Just win)
+    lift $ forkOS $ void $ runEitherT $ do
+        res' <- lift $ createWindow width height "" Nothing Nothing
+        win <- maybe (left "error creating window") return res'
 
-    renderFunc <- lift $ renderFilledLine samples colorMap
+        lift $ makeContextCurrent (Just win)
+        lift $ clearColor $= Color4 0 0 0 0
 
-    lift $ clearColor $= Color4 0 0 0 0
+        renderFunc <- lift $ renderFilledLine samples colorMap
 
-    return $ \dat -> do
-        makeContextCurrent (Just win)
-        clear [ColorBuffer]
-        renderFunc dat
-        swapBuffers win
+        lift $ forever $ do
+            dat <- takeMVar mv
+            makeContextCurrent (Just win)
+            clear [ColorBuffer]
+            renderFunc dat
+            swapBuffers win
+
+    return $ replaceMVar mv 
 
 renderFilledLine :: IsPixelData a => Int -> [GLfloat] -> IO (a -> IO ())
 renderFilledLine samples colorMap = do

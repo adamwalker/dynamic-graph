@@ -19,7 +19,6 @@ import Foreign.Storable
 import Foreign.Marshal.Array
 import Control.Concurrent
 import Control.Concurrent.MVar
-import Control.DeepSeq
 
 import Pipes
 
@@ -57,7 +56,7 @@ textureLineWindow width height samples xResolution = do
             renderFunc dat
             swapBuffers win
 
-    return $ \x -> replaceMVar mv x
+    return $ replaceMVar mv 
 
 renderTextureLine :: IsPixelData a => Int -> Int -> IO (a -> IO())
 renderTextureLine samples xResolution = do

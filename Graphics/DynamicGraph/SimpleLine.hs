@@ -1,3 +1,4 @@
+{-# LANGUAGE ScopedTypeVariables #-}
 {-| Draw and update line graphs with OpenGL.
 
     Based on: <https://en.wikibooks.org/wiki/OpenGL_Programming/Scientific_OpenGL_Tutorial_01>
@@ -18,6 +19,10 @@ import Control.Monad.Trans.Class
 import Control.Monad.Trans.Either
 import Foreign.Storable
 import Foreign.Ptr
+import Control.Concurrent
+import Control.Concurrent.MVar
+
+import Graphics.DynamicGraph.Util
 
 import Paths_dynamic_graph
 
@@ -30,18 +35,24 @@ import Paths_dynamic_graph
 -}
 simpleLineWindow :: Int -> Int -> Int -> EitherT String IO (Ptr GLfloat -> IO ())
 simpleLineWindow width height bufLen = do
-    res' <- lift $ createWindow width height "" Nothing Nothing
-    win <- maybe (left "error creating window") return res'
+    mv :: MVar (Ptr GLfloat) <- lift $ newEmptyMVar
 
-    lift $ makeContextCurrent (Just win)
-    renderFunc <- lift $ renderSimpleLine bufLen
-    lift $ clearColor $= Color4 1 1 1 1
+    lift $ forkOS $ void $ runEitherT $ do
+        res' <- lift $ createWindow width height "" Nothing Nothing
+        win <- maybe (left "error creating window") return res'
 
-    return $ \dat -> do
-        makeContextCurrent (Just win)
-        clear [ColorBuffer]
-        renderFunc dat
-        swapBuffers win
+        lift $ makeContextCurrent (Just win)
+        renderFunc <- lift $ renderSimpleLine bufLen
+        lift $ clearColor $= Color4 1 1 1 1
+
+        lift $ forever $ do
+            dat <- takeMVar mv
+            makeContextCurrent (Just win)
+            clear [ColorBuffer]
+            renderFunc dat
+            swapBuffers win
+
+    return $ replaceMVar mv 
 
 renderSimpleLine :: Int -> IO (Ptr GLfloat -> IO ())
 renderSimpleLine bufLen = do
