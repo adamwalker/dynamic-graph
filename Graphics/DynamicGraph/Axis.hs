@@ -35,6 +35,12 @@ blankCanvas colour width height  = do
     rectangle 0 0 width height
     fill
 
+blankCanvasAlpha :: Colour Double -> Double -> Double -> Double -> Render ()
+blankCanvasAlpha colour alpha width height  = do
+    uncurryRGB (\x y z -> setSourceRGBA x y z alpha) (toSRGB colour)
+    rectangle 0 0 width height
+    fill
+
 drawAxes :: Double -> Double -> Double -> Double -> Double -> Double -> Colour Double -> Double -> Render ()
 drawAxes width height topMargin bottomMargin leftMargin rightMargin axisColor axisWidth = do
     setDash [] 0
