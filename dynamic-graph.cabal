@@ -14,14 +14,14 @@ category:            Graphics
 build-type:          Simple
 -- extra-source-files:  
 cabal-version:       >=1.10
-data-files:          shaders/simple_line.vert, shaders/simple_line.frag, shaders/texture_line.vert, shaders/texture_line.frag, shaders/waterfall.vert, shaders/waterfall.frag, shaders/fill_line.vert, shaders/fill_line.frag, shaders/cairo.vert, shaders/cairo.frag
+data-files:          shaders/texture_line.vert, shaders/texture_line.frag, shaders/waterfall.vert, shaders/waterfall.frag, shaders/fill_line.vert, shaders/fill_line.frag, shaders/cairo.vert, shaders/cairo.frag
 
 source-repository head
     type: git
     location: https://github.com/adamwalker/dynamic-graph
 
 library
-  exposed-modules:     Graphics.DynamicGraph.SimpleLine, Graphics.DynamicGraph.TextureLine, Graphics.DynamicGraph.Waterfall, Graphics.DynamicGraph.Util, Graphics.DynamicGraph.FillLine, Graphics.DynamicGraph.Axis, Graphics.DynamicGraph.RenderCairo
+  exposed-modules:     Graphics.DynamicGraph.TextureLine, Graphics.DynamicGraph.Waterfall, Graphics.DynamicGraph.Util, Graphics.DynamicGraph.FillLine, Graphics.DynamicGraph.Axis, Graphics.DynamicGraph.RenderCairo
   -- other-modules:       
   -- other-extensions:    
   build-depends:       base >=4.6 && <4.8, GLFW-b >=1.4 && <1.5, OpenGL >=2.9 && <2.10, GLUtil >=0.7 && <0.8, transformers >=0.3 && <0.5, either >=4.1 && <4.4, pipes, pango, cairo, colour, bytestring, deepseq
