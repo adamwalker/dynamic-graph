@@ -1,8 +1,10 @@
 {-# LANGUAGE ScopedTypeVariables #-}
+
 {-| Draw and update line graphs with OpenGL.
 
     Based on: <https://en.wikibooks.org/wiki/OpenGL_Programming/Scientific_OpenGL_Tutorial_02>
 -}
+
 module Graphics.DynamicGraph.TextureLine (
     textureLineWindow,
     renderTextureLine
@@ -28,11 +30,13 @@ import Graphics.DynamicGraph.Util
 
 import Paths_dynamic_graph
 
-{-| @(graph windowWidth windowHeight samples xResolution)@ creates a window
-    of width @windowWidth@ and height @windowHeight@ for displaying a line
-    graph. A function is returned for updating the line graph. It takes an
-    instance of IsPixelData of length @samples@ as the y values and draws
-    a line graph with @xResolution@ vertices. 
+{-| @(textureLineWindow windowWidth windowHeight samples xResolution)@
+     creates a window of width @windowWidth@ and height @windowHeight@ for
+     displaying a line graph. 
+     
+     A function is returned for dynamically updating the line graph. It
+     takes an instance of IsPixelData of length @samples@ as the y values
+     and draws a line graph with @xResolution@ vertices. 
 -}
 textureLineWindow :: forall a. (IsPixelData a) => Int -> Int -> Int -> Int -> EitherT String IO (a -> IO ())
 textureLineWindow width height samples xResolution = do
@@ -58,6 +62,14 @@ textureLineWindow width height samples xResolution = do
 
     return $ replaceMVar mv 
 
+{-| @(renderTextureLine samples xResolution)@ returns a function that
+    renders a line graph into the current OpenGL context. The function
+    takes an instance of IsPixelData of length @samples@ and draws a line
+    graph with @xResolution@ vertices. 
+
+    All OpenGL based initialization of the rendering function (loading of
+    shaders, etc) is performed before the function is returned.
+-}
 renderTextureLine :: IsPixelData a => Int -> Int -> IO (a -> IO())
 renderTextureLine samples xResolution = do
     --Load the shaders

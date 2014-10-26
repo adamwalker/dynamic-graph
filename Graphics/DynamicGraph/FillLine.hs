@@ -1,4 +1,8 @@
 {-# LANGUAGE ScopedTypeVariables #-}
+
+{-| Draw and update filled in line graphs with OpenGL.
+-}
+
 module Graphics.DynamicGraph.FillLine (
     filledLineWindow,
     renderFilledLine
@@ -22,6 +26,15 @@ import Graphics.DynamicGraph.Util
 
 import Paths_dynamic_graph
 
+{-| @(filledLineWindow windowWidth windowHeight samples colorMap)@ creates
+    a window of width @windowWidth@ and height @windowHeight@ for
+    displaying a line graph. 
+    
+    A function is returned for dynamically updating the line graph. It
+    takes an instance of IsPixelData of length @samples@ as the y values. 
+    
+    The fill is drawn with a vertical gradient defined by @colorMap@.
+-}
 filledLineWindow :: IsPixelData a => Int -> Int -> Int -> [GLfloat] -> EitherT String IO (a -> IO ())
 filledLineWindow width height samples colorMap = do
     mv :: MVar a <- lift $ newEmptyMVar
@@ -44,6 +57,15 @@ filledLineWindow width height samples colorMap = do
 
     return $ replaceMVar mv 
 
+{-| @(renderFilledLine samples colorMap)@ returns a function that
+    renders a filled in line graph into the current OpenGL context. The
+    function takes an instance of IsPixelData of length @samples@.
+
+    The fill is drawn with a vertical gradient defined by @colorMap@.
+
+    All OpenGL based initialization of the rendering function (loading of
+    shaders, etc) is performed before the function is returned.
+-}
 renderFilledLine :: IsPixelData a => Int -> [GLfloat] -> IO (a -> IO ())
 renderFilledLine samples colorMap = do
     --Load the shaders

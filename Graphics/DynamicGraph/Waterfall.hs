@@ -49,13 +49,16 @@ bw =  [0, 0, 0, 1, 1, 1]
 wb :: [GLfloat]
 wb =  [1, 1, 1, 0, 0, 0]
 
-{-| @(graph windowWidth windowHeight width height colormap)@ creates
-    a window of width @windowWidth@ and height @windowHeight@ for displaying
-    a waterfall plot. A Consumer is returned for updating the waterfall
-    plot. Feeding an instance of IsPixelData of length @width@ shifts all
-    rows of the waterfall down and updates the top row with the data. The
-    waterfall is @height@ rows high. @colorMap@ is used to map values to
-    display color.
+{-| @(waterfallWindow windowWidth windowHeight width height colormap)@
+    creates a window of width @windowWidth@ and height @windowHeight@ for
+    displaying a waterfall plot. 
+    
+    A Consumer is returned for updating the waterfall plot. Feeding an
+    instance of IsPixelData of length @width@ shifts all rows of the
+    waterfall down and updates the top row with the data. 
+        
+    The waterfall is @height@ rows of data high. @colorMap@ is used to map
+    values to display color.
 -}
 waterfallWindow :: IsPixelData a => Int -> Int -> Int -> Int -> [GLfloat] -> EitherT String IO (a -> IO ())
 waterfallWindow windowWidth windowHeight width height colorMap = do
@@ -75,6 +78,16 @@ waterfallWindow windowWidth windowHeight width height colorMap = do
 
     return $ \x -> replaceMVar mv x
 
+{-| @(renderWaterfallLine width height colorMap)@ returns a Consumer that
+    renders a waterfall plot into the current OpenGL context. The Consumer
+    takes data that is an instance of IsPixelData and of length @width@.
+    The waterfall is @height@ rows of data high.
+
+    The fill is drawn with a vertical gradient defined by @colorMap@.
+
+    All OpenGL based initialization of the rendering function (loading of
+    shaders, etc) is performed before the pipe is returned.
+-}
 renderWaterfall :: IsPixelData a => Int -> Int -> [GLfloat] -> IO (Consumer a IO ())
 renderWaterfall width height colorMap = do
     --Load the shaders
@@ -168,3 +181,4 @@ renderWaterfall width height colorMap = do
             pipe $ if yoffset + 1 >= height then 0 else yoffset + 1
 
     return $ pipe 0
+
