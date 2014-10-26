@@ -1,3 +1,6 @@
+{-| Render Cairo drawings with OpenGL. Useful for drawing axes.
+-}
+
 module Graphics.DynamicGraph.RenderCairo (
     renderCairo
     ) where
@@ -23,6 +26,15 @@ import Data.ByteString (ByteString)
 
 import Paths_dynamic_graph
 
+{-| @(renderCairo rm width height)@ returns a function that
+    renders the cairo drawing @rm@ into the current OpenGL context. The
+    drawing is rendered with x resolution @width@ and y resolution
+    @height@.
+
+    All OpenGL based initialization of the rendering function (loading of
+    shaders, rendering the cairo drawing to a texture, etc) is performed
+    before the function is returned.
+-}
 renderCairo :: Render a -> Int -> Int -> IO (IO ())
 renderCairo rm width height = do
 

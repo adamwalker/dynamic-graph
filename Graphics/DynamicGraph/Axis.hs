@@ -1,3 +1,7 @@
+{-| Various utilities for drawing axes with Cairo that will be later
+    rendered using @Graphics.DynamicGraph.RenderCairo@
+-}
+
 {-# LANGUAGE RecordWildCards #-}
 
 module Graphics.DynamicGraph.Axis where
