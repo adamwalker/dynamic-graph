@@ -38,22 +38,32 @@ import Paths_dynamic_graph
 filledLineWindow :: IsPixelData a => Int -> Int -> Int -> [GLfloat] -> EitherT String IO (a -> IO ())
 filledLineWindow width height samples colorMap = do
     mv :: MVar a <- lift $ newEmptyMVar
+    completion <- lift $ newEmptyMVar
 
-    lift $ forkOS $ void $ runEitherT $ do
-        res' <- lift $ createWindow width height "" Nothing Nothing
-        win <- maybe (left "error creating window") return res'
+    lift $ forkOS $ void $ do
+        res <- runEitherT $ do
+            res' <- lift $ createWindow width height "" Nothing Nothing
+            win <- maybe (left "error creating window") return res'
 
-        lift $ makeContextCurrent (Just win)
-        lift $ clearColor $= Color4 0 0 0 0
+            lift $ makeContextCurrent (Just win)
+            lift $ clearColor $= Color4 0 0 0 0
 
-        renderFunc <- lift $ renderFilledLine samples colorMap
+            renderFunc <- lift $ renderFilledLine samples colorMap
 
-        lift $ forever $ do
-            dat <- takeMVar mv
-            makeContextCurrent (Just win)
-            clear [ColorBuffer]
-            renderFunc dat
-            swapBuffers win
+            return $ forever $ do
+                dat <- takeMVar mv
+                makeContextCurrent (Just win)
+                clear [ColorBuffer]
+                renderFunc dat
+                swapBuffers win
+
+        case res of
+            Left  err        -> replaceMVar completion $ left err
+            Right renderLoop -> do
+                replaceMVar completion $ right ()
+                renderLoop
+
+    join $ lift $ takeMVar completion
 
     return $ replaceMVar mv 
 

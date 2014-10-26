@@ -41,24 +41,35 @@ import Paths_dynamic_graph
 textureLineWindow :: forall a. (IsPixelData a) => Int -> Int -> Int -> Int -> EitherT String IO (a -> IO ())
 textureLineWindow width height samples xResolution = do
     mv :: MVar a <- lift $ newEmptyMVar
+    completion <- lift $ newEmptyMVar
 
-    lift $ forkOS $ void $ runEitherT $ do
-        res' <- lift $ createWindow width height "" Nothing Nothing
-        win <- maybe (left "error creating window") return res'
+    lift $ forkOS $ void $ do
+        --All the OpenGL stuff has to be in the same thread
+        res <- runEitherT $ do
+            res' <- lift $ createWindow width height "" Nothing Nothing
+            win <- maybe (left "error creating window") return res'
 
-        lift $ makeContextCurrent (Just win)
-        mtu <- lift $ get maxVertexTextureImageUnits
-        when (mtu <= 0) $ left "No texture units accessible from vertex shader"
-        lift $ clearColor $= Color4 0 0 0 0
+            lift $ makeContextCurrent (Just win)
+            mtu <- lift $ get maxVertexTextureImageUnits
+            when (mtu <= 0) $ left "No texture units accessible from vertex shader"
+            lift $ clearColor $= Color4 0 0 0 0
 
-        (renderFunc :: a -> IO ()) <- lift $ renderTextureLine samples xResolution
+            (renderFunc :: a -> IO ()) <- lift $ renderTextureLine samples xResolution
 
-        lift $ forever $ do
-            dat <- takeMVar mv
-            makeContextCurrent (Just win)
-            clear [ColorBuffer]
-            renderFunc dat
-            swapBuffers win
+            return $ forever $ do
+                dat <- takeMVar mv
+                makeContextCurrent (Just win)
+                clear [ColorBuffer]
+                renderFunc dat
+                swapBuffers win
+
+        case res of
+            Left  err        -> replaceMVar completion $ left err
+            Right renderLoop -> do
+                replaceMVar completion $ right ()
+                renderLoop
+
+    join $ lift $ takeMVar completion
 
     return $ replaceMVar mv 
 

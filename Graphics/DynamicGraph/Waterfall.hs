@@ -63,18 +63,28 @@ wb =  [1, 1, 1, 0, 0, 0]
 waterfallWindow :: IsPixelData a => Int -> Int -> Int -> Int -> [GLfloat] -> EitherT String IO (a -> IO ())
 waterfallWindow windowWidth windowHeight width height colorMap = do
     mv :: MVar a <- lift $ newEmptyMVar
+    completion <- lift $ newEmptyMVar
 
-    lift $ forkOS $ void $ runEitherT $ do
-        res' <- lift $ createWindow windowWidth windowHeight "" Nothing Nothing
-        win <- maybe (left "error creating window") return res'
-        lift $ makeContextCurrent (Just win)
-        renderPipe <- lift $ renderWaterfall width height colorMap
-        let thePipe = (<-<) renderPipe $ forever $ do 
-                dat <- lift $ takeMVar mv
-                lift $ makeContextCurrent (Just win)
-                yield dat
-                lift $ swapBuffers win
-        lift $ runEffect thePipe
+    lift $ forkOS $ void $ do
+        res <- runEitherT $ do
+            res' <- lift $ createWindow windowWidth windowHeight "" Nothing Nothing
+            win <- maybe (left "error creating window") return res'
+            lift $ makeContextCurrent (Just win)
+            renderPipe <- lift $ renderWaterfall width height colorMap
+            let thePipe = (<-<) renderPipe $ forever $ do 
+                    dat <- lift $ takeMVar mv
+                    lift $ makeContextCurrent (Just win)
+                    yield dat
+                    lift $ swapBuffers win
+            return $ runEffect thePipe
+
+        case res of
+            Left  err        -> replaceMVar completion $ left err
+            Right renderLoop -> do
+                replaceMVar completion $ right ()
+                renderLoop
+
+    join $ lift $ takeMVar completion
 
     return $ \x -> replaceMVar mv x
 
