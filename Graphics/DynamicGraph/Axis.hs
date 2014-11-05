@@ -17,7 +17,7 @@ import Graphics.Rendering.Pango
 makeLayout :: PangoContext -> String -> Render (PangoLayout, PangoRectangle)
 makeLayout ctx text = liftIO $ do
     layout <- layoutEmpty ctx
-    layoutSetMarkup layout text
+    layoutSetMarkup layout text :: IO String
     (_, rect) <- layoutGetExtents layout
     return (layout, rect)
 
@@ -64,10 +64,10 @@ drawAxes width height topMargin bottomMargin leftMargin rightMargin axisColor ax
     stroke
 
 gridXCoords :: Double -> Double -> Double -> Double -> Double -> [Double]
-gridXCoords width offset leftMargin rightMargin spacing = takeWhile (< (width - rightMargin)) $ iterate (+ spacing) (offset + leftMargin)
+gridXCoords width offset leftMargin rightMargin spacing = takeWhile (<= (width - rightMargin)) $ iterate (+ spacing) (offset + leftMargin)
 
 gridYCoords :: Double -> Double -> Double -> Double -> Double -> [Double]
-gridYCoords height offset topMargin bottomMargin spacing = takeWhile (> topMargin) $ iterate (flip (-) spacing) (height - bottomMargin - offset)
+gridYCoords height offset topMargin bottomMargin spacing = takeWhile (>= topMargin) $ iterate (flip (-) spacing) (height - bottomMargin - offset)
 
 xAxisLabels :: PangoContext -> Colour Double -> [String] -> [Double] -> Double -> Render ()
 xAxisLabels ctx textColor gridLabels gridXCoords yCoord = do
