@@ -2,7 +2,7 @@
 -- documentation, see http://haskell.org/cabal/users-guide/
 
 name:                dynamic-graph
-version:             0.1.0.3
+version:             0.1.0.4
 synopsis:            Draw and update graphs in real time with OpenGL
 description:         Draw and update graphs in real time with OpenGL. Suitable for displaying large amounts of frequently changing data. Line graphs and waterfall plots are supported, as well as axis drawing.
 license:             BSD3
