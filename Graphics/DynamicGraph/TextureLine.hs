@@ -21,6 +21,7 @@ import Foreign.Storable
 import Foreign.Marshal.Array
 import Control.Concurrent
 import Control.Concurrent.MVar
+import Data.IORef
 
 import Pipes
 
@@ -38,17 +39,21 @@ import Paths_dynamic_graph
      takes an instance of IsPixelData of length @samples@ as the y values
      and draws a line graph with @xResolution@ vertices. 
 -}
-textureLineWindow :: forall a. (IsPixelData a) => Int -> Int -> Int -> Int -> EitherT String IO (a -> IO ())
+textureLineWindow :: forall a. (IsPixelData a) => Int -> Int -> Int -> Int -> EitherT String IO (Consumer a IO ())
 textureLineWindow width height samples xResolution = do
     mv :: MVar a <- lift $ newEmptyMVar
     completion <- lift $ newEmptyMVar
+
+    closed <- lift $ newIORef False
 
     lift $ forkOS $ void $ do
         --All the OpenGL stuff has to be in the same thread
         res <- runEitherT $ do
             res' <- lift $ createWindow width height "" Nothing Nothing
             win <- maybe (left "error creating window") return res'
-
+            lift $ setWindowSizeCallback win $ Just $ \win x y -> do
+                viewport $= (Position 0 0, Size (fromIntegral x) (fromIntegral y))
+            lift $ setWindowCloseCallback win $ Just $ \win -> writeIORef closed True
             lift $ makeContextCurrent (Just win)
             mtu <- lift $ get maxVertexTextureImageUnits
             when (mtu <= 0) $ left "No texture units accessible from vertex shader"
@@ -57,6 +62,7 @@ textureLineWindow width height samples xResolution = do
             (renderFunc :: a -> IO ()) <- lift $ renderTextureLine samples xResolution
 
             return $ forever $ do
+                pollEvents
                 dat <- takeMVar mv
                 makeContextCurrent (Just win)
                 clear [ColorBuffer]
@@ -71,7 +77,14 @@ textureLineWindow width height samples xResolution = do
 
     join $ lift $ takeMVar completion
 
-    return $ replaceMVar mv 
+    return $ 
+        let pipe = do
+                c <- lift $ readIORef closed
+                when (not c) $ do
+                    x <- await
+                    lift $ replaceMVar mv x
+                    pipe
+        in pipe
 
 {-| @(renderTextureLine samples xResolution)@ returns a function that
     renders a line graph into the current OpenGL context. The function

@@ -19,6 +19,7 @@ import Foreign.Storable
 import Foreign.Marshal.Array
 import Control.Concurrent
 import Control.Concurrent.MVar
+import Data.IORef
 
 import Pipes
 
@@ -35,22 +36,27 @@ import Paths_dynamic_graph
     
     The fill is drawn with a vertical gradient defined by @colorMap@.
 -}
-filledLineWindow :: IsPixelData a => Int -> Int -> Int -> [GLfloat] -> EitherT String IO (a -> IO ())
+filledLineWindow :: IsPixelData a => Int -> Int -> Int -> [GLfloat] -> EitherT String IO (Consumer a IO ())
 filledLineWindow width height samples colorMap = do
     mv :: MVar a <- lift $ newEmptyMVar
     completion <- lift $ newEmptyMVar
+
+    closed <- lift $ newIORef False
 
     lift $ forkOS $ void $ do
         res <- runEitherT $ do
             res' <- lift $ createWindow width height "" Nothing Nothing
             win <- maybe (left "error creating window") return res'
-
+            lift $ setWindowSizeCallback win $ Just $ \win x y -> do
+                viewport $= (Position 0 0, Size (fromIntegral x) (fromIntegral y))
+            lift $ setWindowCloseCallback win $ Just $ \win -> writeIORef closed True
             lift $ makeContextCurrent (Just win)
             lift $ clearColor $= Color4 0 0 0 0
 
             renderFunc <- lift $ renderFilledLine samples colorMap
 
             return $ forever $ do
+                pollEvents
                 dat <- takeMVar mv
                 makeContextCurrent (Just win)
                 clear [ColorBuffer]
@@ -65,7 +71,14 @@ filledLineWindow width height samples colorMap = do
 
     join $ lift $ takeMVar completion
 
-    return $ replaceMVar mv 
+    return $ 
+        let pipe = do
+                c <- lift $ readIORef closed
+                when (not c) $ do
+                    x <- await
+                    lift $ replaceMVar mv x
+                    pipe
+        in pipe
 
 {-| @(renderFilledLine samples colorMap)@ returns a function that
     renders a filled in line graph into the current OpenGL context. The
