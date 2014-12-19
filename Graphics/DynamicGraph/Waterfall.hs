@@ -22,6 +22,7 @@ import Control.Monad.Trans.Class
 import Control.Monad.Trans.Either
 import Foreign.Storable
 import Foreign.Marshal.Array
+import Data.IORef
 
 import Pipes
 
@@ -60,10 +61,12 @@ wb =  [1, 1, 1, 0, 0, 0]
     The waterfall is @height@ rows of data high. @colorMap@ is used to map
     values to display color.
 -}
-waterfallWindow :: IsPixelData a => Int -> Int -> Int -> Int -> [GLfloat] -> EitherT String IO (a -> IO ())
+waterfallWindow :: IsPixelData a => Int -> Int -> Int -> Int -> [GLfloat] -> EitherT String IO (Consumer a IO ())
 waterfallWindow windowWidth windowHeight width height colorMap = do
     mv :: MVar a <- lift $ newEmptyMVar
     completion <- lift $ newEmptyMVar
+
+    closed <- lift $ newIORef False
 
     lift $ forkOS $ void $ do
         res <- runEitherT $ do
@@ -71,15 +74,17 @@ waterfallWindow windowWidth windowHeight width height colorMap = do
             win <- maybe (left "error creating window") return res'
             lift $ setWindowSizeCallback win $ Just $ \win x y -> do
                 viewport $= (Position 0 0, Size (fromIntegral x) (fromIntegral y))
+            lift $ setWindowCloseCallback win $ Just $ \win -> writeIORef closed True
             lift $ makeContextCurrent (Just win)
             renderPipe <- lift $ renderWaterfall width height colorMap
-            let thePipe = (<-<) renderPipe $ forever $ do 
+            let thePipe = forever $ do 
+                    lift $ pollEvents
                     dat <- lift $ takeMVar mv
                     lift $ makeContextCurrent (Just win)
                     lift $ pollEvents
                     yield dat
                     lift $ swapBuffers win
-            return $ runEffect thePipe
+            return $ runEffect $ thePipe >-> renderPipe
 
         case res of
             Left  err        -> replaceMVar completion $ left err
@@ -89,7 +94,14 @@ waterfallWindow windowWidth windowHeight width height colorMap = do
 
     join $ lift $ takeMVar completion
 
-    return $ \x -> replaceMVar mv x
+    return $ 
+        let pipe = do
+                c <- lift $ readIORef closed
+                when (not c) $ do
+                    x <- await
+                    lift $ replaceMVar mv x
+                    pipe
+        in pipe
 
 {-| @(renderWaterfallLine width height colorMap)@ returns a Consumer that
     renders a waterfall plot into the current OpenGL context. The Consumer
