@@ -69,11 +69,14 @@ waterfallWindow windowWidth windowHeight width height colorMap = do
         res <- runEitherT $ do
             res' <- lift $ createWindow windowWidth windowHeight "" Nothing Nothing
             win <- maybe (left "error creating window") return res'
+            lift $ setWindowSizeCallback win $ Just $ \win x y -> do
+                viewport $= (Position 0 0, Size (fromIntegral x) (fromIntegral y))
             lift $ makeContextCurrent (Just win)
             renderPipe <- lift $ renderWaterfall width height colorMap
             let thePipe = (<-<) renderPipe $ forever $ do 
                     dat <- lift $ takeMVar mv
                     lift $ makeContextCurrent (Just win)
+                    lift $ pollEvents
                     yield dat
                     lift $ swapBuffers win
             return $ runEffect thePipe
