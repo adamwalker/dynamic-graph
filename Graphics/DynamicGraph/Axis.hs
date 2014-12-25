@@ -4,7 +4,17 @@
 
 {-# LANGUAGE RecordWildCards #-}
 
-module Graphics.DynamicGraph.Axis where
+module Graphics.DynamicGraph.Axis (
+    blankCanvas,
+    blankCanvasAlpha,
+    drawAxes,
+    gridXCoords,
+    gridYCoords,
+    xAxisLabels,
+    yAxisLabels,
+    xAxisGrid,
+    yAxisGrid
+    ) where
 
 import Control.Monad
 import Data.Colour.RGBSpace
