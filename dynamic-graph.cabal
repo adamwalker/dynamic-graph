@@ -11,6 +11,8 @@ author:              Adam Walker
 maintainer:          adamwalker10@gmail.com
 copyright:           2014 Adam Walker
 category:            Graphics
+homepage:            https://github.com/adamwalker/dynamic-graph 
+bug-reports:         https://github.com/adamwalker/dynamic-graph/issues
 build-type:          Simple
 -- extra-source-files:  
 cabal-version:       >=1.10
