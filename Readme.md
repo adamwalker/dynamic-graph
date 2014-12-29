@@ -4,3 +4,7 @@ Draw and update graphs in real time with OpenGL. Suitable for displaying large a
 
 ![Screenshot](../screenshots/screenshots/line.png?raw=true)
 ![Screenshot](../screenshots/screenshots/waterfall.png?raw=true)
+
+# Installation
+
+dynamic-graph is available on Hackage. Install with `cabal install dynamic-graph`.
