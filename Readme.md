@@ -9,7 +9,7 @@ Draw and update graphs in real time with OpenGL. Suitable for displaying large a
 
 # Installation
 
-dynamic-graph is available on Hackage. Install with `cabal install dynamic-graph`.
+dynamic-graph is available on [Hackage](https://hackage.haskell.org/package/dynamic-graph). Install with `cabal install dynamic-graph`.
 
 # Usage
 
