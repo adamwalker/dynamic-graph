@@ -1,11 +1,37 @@
 {-# LANGUAGE ScopedTypeVariables #-}
 
 {-| Draw and update filled in line graphs with OpenGL.
+
+Example usage:
+
+> import Control.Monad
+> import Control.Monad.Trans.Either
+> import Control.Concurrent
+> import Pipes
+> import qualified Pipes.Prelude as P
+> import System.Random
+> import Graphics.Rendering.OpenGL
+> 
+> import Graphics.DynamicGraph.FillLine
+> 
+> randomVect :: Producer [GLfloat] IO ()
+> randomVect =  P.repeatM $ do
+>     res <- replicateM 1000 randomIO
+>     threadDelay 10000
+>     return res
+> 
+> main = eitherT putStrLn return $ do
+>     setupGLFW
+>     lineGraph <- filledLineWindow 1024 480 1000 jet_mod
+> 
+>     lift $ runEffect $ randomVect >-> lineGraph
 -}
 
 module Graphics.DynamicGraph.FillLine (
     filledLineWindow,
-    renderFilledLine
+    renderFilledLine,
+    setupGLFW,
+    module Graphics.DynamicGraph.ColorMaps
     ) where
 
 import Control.Monad
@@ -24,6 +50,7 @@ import Data.IORef
 import Pipes
 
 import Graphics.DynamicGraph.Util
+import Graphics.DynamicGraph.ColorMaps
 
 import Paths_dynamic_graph
 

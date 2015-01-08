@@ -1,14 +1,35 @@
 {-# LANGUAGE ScopedTypeVariables #-}
 {-| Draw and update waterfall plots with OpenGL. Useful for spectrograms.
+
+Example usage:
+
+> import Control.Monad
+> import Control.Monad.Trans.Either
+> import Control.Concurrent
+> import Pipes
+> import qualified Pipes.Prelude as P
+> import System.Random
+> import Graphics.Rendering.OpenGL
+> 
+> import Graphics.DynamicGraph.Waterfall
+> 
+> randomVect :: Producer [GLfloat] IO ()
+> randomVect =  P.repeatM $ do
+>     res <- replicateM 1000 randomIO
+>     threadDelay 10000
+>     return res
+> 
+> main = eitherT putStrLn return $ do
+>     setupGLFW
+>     waterfall <- waterfallWindow 1024 480 1000 1000 jet_mod
+> 
+>     lift $ runEffect $ randomVect >-> waterfall
 -}
 module Graphics.DynamicGraph.Waterfall (
-    jet,
-    jet_mod,
-    hot,
-    bw,
-    wb,
     waterfallWindow,
-    renderWaterfall
+    renderWaterfall,
+    setupGLFW,
+    module Graphics.DynamicGraph.ColorMaps
     ) where
 
 import Control.Monad
@@ -27,28 +48,9 @@ import Data.IORef
 import Pipes
 
 import Graphics.DynamicGraph.Util
+import Graphics.DynamicGraph.ColorMaps
 
 import Paths_dynamic_graph
-
--- | The matlab / octave \"jet\" color map
-jet :: [GLfloat]
-jet =  [0, 0, 0.5,  0, 0, 1,  0, 0.5, 1,   0, 1, 1,  0.5, 1, 0.5,  1, 1, 0,  1, 0.5, 0,  1, 0, 0,  0.5, 0, 0]
-
--- | \"jet\" modified so that low values are a darker blue
-jet_mod :: [GLfloat]
-jet_mod =  [0, 0, 0.1,  0, 0, 1,  0, 0.5, 1,   0, 1, 1,  0.5, 1, 0.5,  1, 1, 0,  1, 0.5, 0,  1, 0, 0,  0.5, 0, 0]
-
--- | The matlab / octave \"hot\" color map
-hot :: [GLfloat]
-hot =  [0, 0, 0,  1, 0, 0,  1, 1, 0,  1, 1, 1]
-
--- | Ranges from black to white
-bw :: [GLfloat]
-bw =  [0, 0, 0, 1, 1, 1]
-
--- | Ranges from white to black
-wb :: [GLfloat]
-wb =  [1, 1, 1, 0, 0, 0]
 
 {-| @(waterfallWindow windowWidth windowHeight width height colormap)@
     creates a window of width @windowWidth@ and height @windowHeight@ for
