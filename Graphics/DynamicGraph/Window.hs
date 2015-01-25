@@ -6,7 +6,7 @@ module Graphics.DynamicGraph.Window (
 
 import Control.Monad.Trans.Class
 import Control.Monad.Trans.Either
-import Control.Concurrent
+import Control.Concurrent hiding (yield)
 import Control.Concurrent.MVar
 import Data.IORef
 import Control.Monad
@@ -18,8 +18,8 @@ import Pipes
 
 import Graphics.DynamicGraph.Util
 
-window :: IsPixelData a => Int -> Int -> (IO (a -> IO ())) -> EitherT String IO (Consumer a IO ())
-window width height renderFunc = do
+window :: IsPixelData a => Int -> Int -> IO (Consumer a IO ()) -> EitherT String IO (Consumer a IO ())
+window width height renderPipe = do
     mv :: MVar a <- lift $ newEmptyMVar
     completion <- lift $ newEmptyMVar
 
@@ -35,15 +35,17 @@ window width height renderFunc = do
             lift $ makeContextCurrent (Just win)
             lift $ clearColor $= Color4 0 0 0 0
 
-            renderFunc <- lift renderFunc
+            renderPipe <- lift renderPipe
 
-            return $ forever $ do
-                pollEvents
-                dat <- takeMVar mv
-                makeContextCurrent (Just win)
-                clear [ColorBuffer]
-                renderFunc dat
-                swapBuffers win
+            let thePipe = forever $ do 
+                    lift $ pollEvents
+                    dat <- lift $ takeMVar mv
+                    lift $ makeContextCurrent (Just win)
+                    lift $ pollEvents
+                    lift $ clear [ColorBuffer]
+                    yield dat
+                    lift $ swapBuffers win
+            return $ runEffect $ thePipe >-> renderPipe
 
         case res of
             Left  err        -> replaceMVar completion $ left err
