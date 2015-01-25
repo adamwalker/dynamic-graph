@@ -14,7 +14,7 @@
 > import System.Random
 > import Graphics.Rendering.OpenGL
 > 
-> import Graphics.DynamicGraph.TextureLine
+> import Graphics.DynamicGraph.Line
 > 
 > randomVect :: Producer [GLfloat] IO ()
 > randomVect =  P.repeatM $ do
@@ -24,14 +24,14 @@
 > 
 > main = eitherT putStrLn return $ do
 >     setupGLFW
->     lineGraph <- textureLineWindow 1024 480 1000 1024 
+>     lineGraph <- lineWindow 1024 480 1000 1024 
 > 
 >     lift $ runEffect $ randomVect >-> lineGraph
 -}
 
-module Graphics.DynamicGraph.TextureLine (
-    textureLineWindow,
-    renderTextureLine,
+module Graphics.DynamicGraph.Line (
+    lineWindow,
+    renderLine,
     setupGLFW
     ) where
 
@@ -56,7 +56,7 @@ import Graphics.DynamicGraph.Util
 
 import Paths_dynamic_graph
 
-{-| @(textureLineWindow windowWidth windowHeight samples xResolution)@
+{-| @(lineWindow windowWidth windowHeight samples xResolution)@
      creates a window of width @windowWidth@ and height @windowHeight@ for
      displaying a line graph. 
      
@@ -64,8 +64,8 @@ import Paths_dynamic_graph
      takes an instance of IsPixelData of length @samples@ as the y values
      and draws a line graph with @xResolution@ vertices. 
 -}
-textureLineWindow :: forall a. (IsPixelData a) => Int -> Int -> Int -> Int -> EitherT String IO (Consumer a IO ())
-textureLineWindow width height samples xResolution = do
+lineWindow :: forall a. (IsPixelData a) => Int -> Int -> Int -> Int -> EitherT String IO (Consumer a IO ())
+lineWindow width height samples xResolution = do
     mv :: MVar a <- lift $ newEmptyMVar
     completion <- lift $ newEmptyMVar
 
@@ -84,7 +84,7 @@ textureLineWindow width height samples xResolution = do
             when (mtu <= 0) $ left "No texture units accessible from vertex shader"
             lift $ clearColor $= Color4 0 0 0 0
 
-            (renderFunc :: a -> IO ()) <- lift $ renderTextureLine samples xResolution
+            (renderFunc :: a -> IO ()) <- lift $ renderLine samples xResolution
 
             return $ forever $ do
                 pollEvents
@@ -111,7 +111,7 @@ textureLineWindow width height samples xResolution = do
                     pipe
         in pipe
 
-{-| @(renderTextureLine samples xResolution)@ returns a function that
+{-| @(renderLine samples xResolution)@ returns a function that
     renders a line graph into the current OpenGL context. The function
     takes an instance of IsPixelData of length @samples@ and draws a line
     graph with @xResolution@ vertices. 
@@ -119,11 +119,11 @@ textureLineWindow width height samples xResolution = do
     All OpenGL based initialization of the rendering function (loading of
     shaders, etc) is performed before the function is returned.
 -}
-renderTextureLine :: IsPixelData a => Int -> Int -> IO (a -> IO())
-renderTextureLine samples xResolution = do
+renderLine :: IsPixelData a => Int -> Int -> IO (a -> IO())
+renderLine samples xResolution = do
     --Load the shaders
-    vertFN <- getDataFileName "shaders/texture_line.vert"
-    fragFN <- getDataFileName "shaders/texture_line.frag"
+    vertFN <- getDataFileName "shaders/line.vert"
+    fragFN <- getDataFileName "shaders/line.frag"
     vs <- loadShader VertexShader   vertFN
     fs <- loadShader FragmentShader fragFN
     p  <- linkShaderProgram [vs, fs]
