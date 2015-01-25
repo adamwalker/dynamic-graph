@@ -30,7 +30,6 @@
 -}
 
 module Graphics.DynamicGraph.Line (
-    lineWindow,
     renderLine,
     setupGLFW
     ) where
@@ -55,58 +54,6 @@ import Graphics.DynamicGraph.Axis
 import Graphics.DynamicGraph.Util
 
 import Paths_dynamic_graph
-
-{-| @(lineWindow windowWidth windowHeight samples xResolution)@
-     creates a window of width @windowWidth@ and height @windowHeight@ for
-     displaying a line graph. 
-     
-     A function is returned for dynamically updating the line graph. It
-     takes an instance of IsPixelData of length @samples@ as the y values
-     and draws a line graph with @xResolution@ vertices. 
--}
-lineWindow :: forall a. (IsPixelData a) => Int -> Int -> Int -> Int -> EitherT String IO (Consumer a IO ())
-lineWindow width height samples xResolution = do
-    mv :: MVar a <- lift $ newEmptyMVar
-    completion <- lift $ newEmptyMVar
-
-    closed <- lift $ newIORef False
-
-    lift $ forkOS $ void $ do
-        res <- runEitherT $ do
-            res' <- lift $ createWindow width height "" Nothing Nothing
-            win <- maybe (left "error creating window") return res'
-            lift $ setWindowSizeCallback win $ Just $ \win x y -> do
-                viewport $= (Position 0 0, Size (fromIntegral x) (fromIntegral y))
-            lift $ setWindowCloseCallback win $ Just $ \win -> writeIORef closed True
-            lift $ makeContextCurrent (Just win)
-            lift $ clearColor $= Color4 0 0 0 0
-
-            (renderFunc :: a -> IO ()) <- lift $ renderLine samples xResolution
-
-            return $ forever $ do
-                pollEvents
-                dat <- takeMVar mv
-                makeContextCurrent (Just win)
-                clear [ColorBuffer]
-                renderFunc dat
-                swapBuffers win
-
-        case res of
-            Left  err        -> replaceMVar completion $ left err
-            Right renderLoop -> do
-                replaceMVar completion $ right ()
-                renderLoop
-
-    join $ lift $ takeMVar completion
-
-    return $ 
-        let pipe = do
-                c <- lift $ readIORef closed
-                when (not c) $ do
-                    x <- await
-                    lift $ replaceMVar mv x
-                    pipe
-        in pipe
 
 {-| @(renderLine samples xResolution)@ returns a function that
     renders a line graph into the current OpenGL context. The function

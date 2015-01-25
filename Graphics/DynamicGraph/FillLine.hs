@@ -28,7 +28,6 @@ Example usage:
 -}
 
 module Graphics.DynamicGraph.FillLine (
-    filledLineWindow,
     renderFilledLine,
     setupGLFW,
     module Graphics.DynamicGraph.ColorMaps
@@ -53,59 +52,6 @@ import Graphics.DynamicGraph.Util
 import Graphics.DynamicGraph.ColorMaps
 
 import Paths_dynamic_graph
-
-{-| @(filledLineWindow windowWidth windowHeight samples colorMap)@ creates
-    a window of width @windowWidth@ and height @windowHeight@ for
-    displaying a line graph. 
-    
-    A function is returned for dynamically updating the line graph. It
-    takes an instance of IsPixelData of length @samples@ as the y values. 
-    
-    The fill is drawn with a vertical gradient defined by @colorMap@.
--}
-filledLineWindow :: IsPixelData a => Int -> Int -> Int -> [GLfloat] -> EitherT String IO (Consumer a IO ())
-filledLineWindow width height samples colorMap = do
-    mv :: MVar a <- lift $ newEmptyMVar
-    completion <- lift $ newEmptyMVar
-
-    closed <- lift $ newIORef False
-
-    lift $ forkOS $ void $ do
-        res <- runEitherT $ do
-            res' <- lift $ createWindow width height "" Nothing Nothing
-            win <- maybe (left "error creating window") return res'
-            lift $ setWindowSizeCallback win $ Just $ \win x y -> do
-                viewport $= (Position 0 0, Size (fromIntegral x) (fromIntegral y))
-            lift $ setWindowCloseCallback win $ Just $ \win -> writeIORef closed True
-            lift $ makeContextCurrent (Just win)
-            lift $ clearColor $= Color4 0 0 0 0
-
-            renderFunc <- lift $ renderFilledLine samples colorMap
-
-            return $ forever $ do
-                pollEvents
-                dat <- takeMVar mv
-                makeContextCurrent (Just win)
-                clear [ColorBuffer]
-                renderFunc dat
-                swapBuffers win
-
-        case res of
-            Left  err        -> replaceMVar completion $ left err
-            Right renderLoop -> do
-                replaceMVar completion $ right ()
-                renderLoop
-
-    join $ lift $ takeMVar completion
-
-    return $ 
-        let pipe = do
-                c <- lift $ readIORef closed
-                when (not c) $ do
-                    x <- await
-                    lift $ replaceMVar mv x
-                    pipe
-        in pipe
 
 {-| @(renderFilledLine samples colorMap)@ returns a function that
     renders a filled in line graph into the current OpenGL context. The
