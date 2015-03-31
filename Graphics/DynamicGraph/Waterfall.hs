@@ -26,7 +26,6 @@ Example usage:
 >     lift $ runEffect $ randomVect >-> waterfall
 -}
 module Graphics.DynamicGraph.Waterfall (
-    waterfallWindow,
     renderWaterfall,
     setupGLFW,
     module Graphics.DynamicGraph.ColorMaps
@@ -51,61 +50,6 @@ import Graphics.DynamicGraph.Util
 import Graphics.DynamicGraph.ColorMaps
 
 import Paths_dynamic_graph
-
-{-| @(waterfallWindow windowWidth windowHeight width height colormap)@
-    creates a window of width @windowWidth@ and height @windowHeight@ for
-    displaying a waterfall plot. 
-    
-    A Consumer is returned for updating the waterfall plot. Feeding an
-    instance of IsPixelData of length @width@ shifts all rows of the
-    waterfall down and updates the top row with the data. 
-        
-    The waterfall is @height@ rows of data high. @colorMap@ is used to map
-    values to display color.
--}
-waterfallWindow :: IsPixelData a => Int -> Int -> Int -> Int -> [GLfloat] -> EitherT String IO (Consumer a IO ())
-waterfallWindow windowWidth windowHeight width height colorMap = do
-    mv :: MVar a <- lift $ newEmptyMVar
-    completion <- lift $ newEmptyMVar
-
-    closed <- lift $ newIORef False
-
-    lift $ forkOS $ void $ do
-        res <- runEitherT $ do
-            res' <- lift $ createWindow windowWidth windowHeight "" Nothing Nothing
-            win <- maybe (left "error creating window") return res'
-            lift $ setWindowSizeCallback win $ Just $ \win x y -> do
-                viewport $= (Position 0 0, Size (fromIntegral x) (fromIntegral y))
-            lift $ setWindowCloseCallback win $ Just $ \win -> writeIORef closed True
-            lift $ makeContextCurrent (Just win)
-
-            renderPipe <- lift $ renderWaterfall width height colorMap
-
-            let thePipe = forever $ do 
-                    lift $ pollEvents
-                    dat <- lift $ takeMVar mv
-                    lift $ makeContextCurrent (Just win)
-                    lift $ pollEvents
-                    yield dat
-                    lift $ swapBuffers win
-            return $ runEffect $ thePipe >-> renderPipe
-
-        case res of
-            Left  err        -> replaceMVar completion $ left err
-            Right renderLoop -> do
-                replaceMVar completion $ right ()
-                renderLoop
-
-    join $ lift $ takeMVar completion
-
-    return $ 
-        let pipe = do
-                c <- lift $ readIORef closed
-                when (not c) $ do
-                    x <- await
-                    lift $ replaceMVar mv x
-                    pipe
-        in pipe
 
 {-| @(renderWaterfallLine width height colorMap)@ returns a Consumer that
     renders a waterfall plot into the current OpenGL context. The Consumer
