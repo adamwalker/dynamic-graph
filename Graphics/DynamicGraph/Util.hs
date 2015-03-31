@@ -1,6 +1,7 @@
 module Graphics.DynamicGraph.Util (
     setupGLFW,
-    replaceMVar
+    replaceMVar,
+    checkVertexTextureUnits
     ) where
 
 import Control.Monad
@@ -9,6 +10,7 @@ import Control.Monad.Trans.Either
 import Control.Concurrent.MVar
 import Control.DeepSeq
 
+import Graphics.Rendering.OpenGL
 import Graphics.UI.GLFW as G
 
 -- | Utility function to setup GLFW for graph drawing
@@ -26,4 +28,9 @@ replaceMVar :: MVar a -> a -> IO ()
 replaceMVar mv val = do
     tryTakeMVar mv
     putMVar mv val
+
+checkVertexTextureUnits :: EitherT String IO ()
+checkVertexTextureUnits = do
+    mtu <- lift $ get maxVertexTextureImageUnits
+    when (mtu <= 0) $ left "No texture units accessible from vertex shader"
 

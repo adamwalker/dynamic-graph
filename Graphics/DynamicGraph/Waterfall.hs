@@ -78,7 +78,9 @@ waterfallWindow windowWidth windowHeight width height colorMap = do
                 viewport $= (Position 0 0, Size (fromIntegral x) (fromIntegral y))
             lift $ setWindowCloseCallback win $ Just $ \win -> writeIORef closed True
             lift $ makeContextCurrent (Just win)
+
             renderPipe <- lift $ renderWaterfall width height colorMap
+
             let thePipe = forever $ do 
                     lift $ pollEvents
                     dat <- lift $ takeMVar mv

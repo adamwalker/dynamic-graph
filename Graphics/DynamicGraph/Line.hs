@@ -72,7 +72,6 @@ lineWindow width height samples xResolution = do
     closed <- lift $ newIORef False
 
     lift $ forkOS $ void $ do
-        --All the OpenGL stuff has to be in the same thread
         res <- runEitherT $ do
             res' <- lift $ createWindow width height "" Nothing Nothing
             win <- maybe (left "error creating window") return res'
@@ -80,8 +79,6 @@ lineWindow width height samples xResolution = do
                 viewport $= (Position 0 0, Size (fromIntegral x) (fromIntegral y))
             lift $ setWindowCloseCallback win $ Just $ \win -> writeIORef closed True
             lift $ makeContextCurrent (Just win)
-            mtu <- lift $ get maxVertexTextureImageUnits
-            when (mtu <= 0) $ left "No texture units accessible from vertex shader"
             lift $ clearColor $= Color4 0 0 0 0
 
             (renderFunc :: a -> IO ()) <- lift $ renderLine samples xResolution
