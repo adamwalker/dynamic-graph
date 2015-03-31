@@ -31,7 +31,6 @@
 
 module Graphics.DynamicGraph.Line (
     renderLine,
-    setupGLFW
     ) where
 
 import Control.Monad
@@ -50,8 +49,6 @@ import Data.IORef
 import Pipes
 
 import Graphics.DynamicGraph.RenderCairo
-import Graphics.DynamicGraph.Axis
-import Graphics.DynamicGraph.Util
 
 import Paths_dynamic_graph
 

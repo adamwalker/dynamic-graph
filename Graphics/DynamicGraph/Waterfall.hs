@@ -27,7 +27,6 @@ Example usage:
 -}
 module Graphics.DynamicGraph.Waterfall (
     renderWaterfall,
-    setupGLFW,
     module Graphics.DynamicGraph.ColorMaps
     ) where
 
@@ -46,7 +45,6 @@ import Data.IORef
 
 import Pipes
 
-import Graphics.DynamicGraph.Util
 import Graphics.DynamicGraph.ColorMaps
 
 import Paths_dynamic_graph
