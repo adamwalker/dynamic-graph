@@ -13,7 +13,7 @@ dynamic-graph is available on [Hackage](https://hackage.haskell.org/package/dyna
 
 # Usage
 
-To plot a waterfall of random data.
+To plot a waterfall of random data:
 
 ```haskell
 
