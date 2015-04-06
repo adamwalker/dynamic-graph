@@ -32,18 +32,11 @@ module Graphics.DynamicGraph.FillLine (
     module Graphics.DynamicGraph.ColorMaps
     ) where
 
-import Control.Monad
-import Graphics.UI.GLFW as G
 import Graphics.Rendering.OpenGL
 import Graphics.GLUtil
 
-import Control.Monad.Trans.Class
-import Control.Monad.Trans.Either
 import Foreign.Storable
 import Foreign.Marshal.Array
-import Control.Concurrent
-import Control.Concurrent.MVar
-import Data.IORef
 
 import Pipes
 
@@ -51,16 +44,14 @@ import Graphics.DynamicGraph.ColorMaps
 
 import Paths_dynamic_graph
 
-{-| @(renderFilledLine samples colorMap)@ returns a function that
-    renders a filled in line graph into the current OpenGL context. The
-    function takes an instance of IsPixelData of length @samples@.
+{-| Returns a function that renders a filled in line graph into the current OpenGL context.
 
-    The fill is drawn with a vertical gradient defined by @colorMap@.
-
-    All OpenGL based initialization of the rendering function (loading of
-    shaders, etc) is performed before the function is returned.
+    All OpenGL based initialization of the rendering function (loading of shaders, etc) is performed before the function is returned.
 -}
-renderFilledLine :: IsPixelData a => Int -> [GLfloat] -> IO (a -> IO ())
+renderFilledLine :: IsPixelData a 
+                 => Int             -- ^ The number of samples in each buffer passed to the rendering function.
+                 -> [GLfloat]       -- ^ Color map for the vertical gradient of the fill.
+                 -> IO (a -> IO ()) -- ^ The function that does the rendering. Takes an instance of `IsPixelData` containing the specified number of y values.
 renderFilledLine samples colorMap = do
     --Load the shaders
     vertFN <- getDataFileName "shaders/fill_line.vert"
@@ -90,7 +81,7 @@ renderFilledLine samples colorMap = do
 
     --The y coordinates
     let yCoords :: [GLfloat]
-        yCoords = take samples $ repeat 0
+        yCoords = replicate samples 0
 
     activeTexture $= TextureUnit 0
     texture Texture2D $= Enabled

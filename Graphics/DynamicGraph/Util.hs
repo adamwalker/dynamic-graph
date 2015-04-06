@@ -1,3 +1,4 @@
+{-| Various utility functions -}
 module Graphics.DynamicGraph.Util (
     setupGLFW,
     replaceMVar,
@@ -29,6 +30,7 @@ replaceMVar mv val = do
     tryTakeMVar mv
     putMVar mv val
 
+-- | Check if texture units are accessible from the vertex shader. Needed  by Graphics.DynamicGraph.Line.
 checkVertexTextureUnits :: EitherT String IO ()
 checkVertexTextureUnits = do
     mtu <- lift $ get maxVertexTextureImageUnits

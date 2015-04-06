@@ -5,37 +5,23 @@ module Graphics.DynamicGraph.RenderCairo (
     renderCairo
     ) where
 
-import Control.Monad
-import Graphics.UI.GLFW as G
-import Graphics.Rendering.OpenGL
-import Graphics.GLUtil
-
-import Control.Monad.Trans.Class
-import Control.Monad.Trans.Either
 import Foreign.Storable
 import Foreign.Marshal.Array
 
-import Data.Colour.RGBSpace
-import Data.Colour.SRGB
-import Data.Colour.Names
+import Graphics.Rendering.OpenGL
+import Graphics.GLUtil
 import Graphics.Rendering.Cairo hiding (height, width)
-import Graphics.Rendering.Pango
-
-import qualified Data.ByteString as BS
-import Data.ByteString (ByteString)
 
 import Paths_dynamic_graph
 
-{-| @(renderCairo rm width height)@ returns a function that
-    renders the cairo drawing @rm@ into the current OpenGL context. The
-    drawing is rendered with x resolution @width@ and y resolution
-    @height@.
+{-| Returns a function that renders a cairo drawing into the current OpenGL context.
 
-    All OpenGL based initialization of the rendering function (loading of
-    shaders, rendering the cairo drawing to a texture, etc) is performed
-    before the function is returned.
+    All OpenGL based initialization of the rendering function (loading of shaders, rendering the cairo drawing to a texture, etc) is performed before the function is returned.
 -}
-renderCairo :: Render a -> Int -> Int -> IO (IO ())
+renderCairo :: Render a   -- ^ Cairo render monad that does the drawing
+            -> Int        -- ^ X resolution
+            -> Int        -- ^ Y resolution
+            -> IO (IO ())
 renderCairo rm width height = do
 
     --Render the graph to a ByteString

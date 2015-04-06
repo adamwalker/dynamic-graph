@@ -1,4 +1,5 @@
 {-# LANGUAGE ScopedTypeVariables #-}
+
 {-| Draw and update waterfall plots with OpenGL. Useful for spectrograms.
 
 Example usage:
@@ -25,23 +26,17 @@ Example usage:
 > 
 >     lift $ runEffect $ randomVect >-> waterfall
 -}
+
 module Graphics.DynamicGraph.Waterfall (
     renderWaterfall,
     module Graphics.DynamicGraph.ColorMaps
     ) where
 
-import Control.Monad
-import Control.Concurrent hiding (yield)
-import Control.Concurrent.MVar
-import Graphics.UI.GLFW as G
 import Graphics.Rendering.OpenGL
 import Graphics.GLUtil
 
-import Control.Monad.Trans.Class
-import Control.Monad.Trans.Either
 import Foreign.Storable
 import Foreign.Marshal.Array
-import Data.IORef
 
 import Pipes
 
@@ -49,17 +44,15 @@ import Graphics.DynamicGraph.ColorMaps
 
 import Paths_dynamic_graph
 
-{-| @(renderWaterfallLine width height colorMap)@ returns a Consumer that
-    renders a waterfall plot into the current OpenGL context. The Consumer
-    takes data that is an instance of IsPixelData and of length @width@.
-    The waterfall is @height@ rows of data high.
+{-| Returns a `Consumer` that renders a waterfall plot into the current OpenGL context. 
 
-    The fill is drawn with a vertical gradient defined by @colorMap@.
-
-    All OpenGL based initialization of the rendering function (loading of
-    shaders, etc) is performed before the pipe is returned.
+    All OpenGL based initialization of the rendering function (loading of shaders, etc) is performed before the Consumer is returned.
 -}
-renderWaterfall :: IsPixelData a => Int -> Int -> [GLfloat] -> IO (Consumer a IO ())
+renderWaterfall :: IsPixelData a 
+                => Int       -- ^ waterfall columns
+                -> Int       -- ^ waterfall rows
+                -> [GLfloat] -- ^ waterfall color map
+                -> IO (Consumer a IO ())
 renderWaterfall width height colorMap = do
     --Load the shaders
     vertFN <- getDataFileName "shaders/waterfall.vert"
@@ -88,7 +81,7 @@ renderWaterfall width height colorMap = do
         bufferData ArrayBuffer $= (fromIntegral $ sizeOf(undefined::GLfloat) * 8, ptr, StaticDraw)
 
     let yCoords :: [GLfloat]
-        yCoords = take (width * height) $ repeat 0
+        yCoords = replicate (width * height) 0
 
     activeTexture $= TextureUnit 0
     texture Texture2D $= Enabled

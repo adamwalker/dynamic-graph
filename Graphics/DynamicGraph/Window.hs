@@ -1,10 +1,10 @@
 {-# LANGUAGE ScopedTypeVariables #-}
 
 module Graphics.DynamicGraph.Window (
-    window
+    window,
+    module Graphics.DynamicGraph.Util
     ) where
 
-import Control.Monad.Trans.Class
 import Control.Monad.Trans.Either
 import Control.Concurrent hiding (yield)
 import Control.Concurrent.MVar
@@ -20,8 +20,8 @@ import Graphics.DynamicGraph.Util
 
 window :: IsPixelData a => Int -> Int -> IO (Consumer a IO ()) -> EitherT String IO (Consumer a IO ())
 window width height renderPipe = do
-    mv :: MVar a <- lift $ newEmptyMVar
-    completion <- lift $ newEmptyMVar
+    mv :: MVar a <- lift newEmptyMVar
+    completion <- lift newEmptyMVar
 
     closed <- lift $ newIORef False
 
@@ -29,7 +29,7 @@ window width height renderPipe = do
         res <- runEitherT $ do
             res' <- lift $ createWindow width height "" Nothing Nothing
             win <- maybe (left "error creating window") return res'
-            lift $ setWindowSizeCallback win $ Just $ \win x y -> do
+            lift $ setWindowSizeCallback win $ Just $ \win x y -> 
                 viewport $= (Position 0 0, Size (fromIntegral x) (fromIntegral y))
             lift $ setWindowCloseCallback win $ Just $ \win -> writeIORef closed True
             lift $ makeContextCurrent (Just win)
@@ -38,10 +38,10 @@ window width height renderPipe = do
             renderPipe <- lift renderPipe
 
             let thePipe = forever $ do 
-                    lift $ pollEvents
+                    lift pollEvents
                     dat <- lift $ takeMVar mv
                     lift $ makeContextCurrent (Just win)
-                    lift $ pollEvents
+                    lift pollEvents
                     lift $ clear [ColorBuffer]
                     yield dat
                     lift $ swapBuffers win
@@ -58,7 +58,7 @@ window width height renderPipe = do
     return $ 
         let pipe = do
                 c <- lift $ readIORef closed
-                when (not c) $ do
+                unless c $ do
                     x <- await
                     lift $ replaceMVar mv x
                     pipe

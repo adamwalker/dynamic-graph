@@ -33,18 +33,11 @@ module Graphics.DynamicGraph.Line (
     renderLine,
     ) where
 
-import Control.Monad
-import Graphics.UI.GLFW as G
 import Graphics.Rendering.OpenGL
 import Graphics.GLUtil
 
-import Control.Monad.Trans.Class
-import Control.Monad.Trans.Either
 import Foreign.Storable
 import Foreign.Marshal.Array
-import Control.Concurrent
-import Control.Concurrent.MVar
-import Data.IORef
 
 import Pipes
 
@@ -52,15 +45,14 @@ import Graphics.DynamicGraph.RenderCairo
 
 import Paths_dynamic_graph
 
-{-| @(renderLine samples xResolution)@ returns a function that
-    renders a line graph into the current OpenGL context. The function
-    takes an instance of IsPixelData of length @samples@ and draws a line
-    graph with @xResolution@ vertices. 
+{-| Returns a function that renders a line graph into the current OpenGL context. 
 
-    All OpenGL based initialization of the rendering function (loading of
-    shaders, etc) is performed before the function is returned.
+    All OpenGL based initialization of the rendering function (loading of shaders, etc) is performed before the function is returned.
 -}
-renderLine :: IsPixelData a => Int -> Int -> IO (a -> IO())
+renderLine :: IsPixelData a 
+           => Int            -- ^ The number of samples in each buffer passed to the rendering function.
+           -> Int            -- ^ The number of vertices in the plotted graph.
+           -> IO (a -> IO()) -- ^ The function that does the rendering. Takes an instance of `IsPixelData` containing the specified number of y values.
 renderLine samples xResolution = do
     --Load the shaders
     vertFN <- getDataFileName "shaders/line.vert"
@@ -89,7 +81,7 @@ renderLine samples xResolution = do
         bufferData ArrayBuffer $= (fromIntegral $ sizeOf(undefined::GLfloat) * xResolution, ptr, StaticDraw)
 
     let yCoords :: [GLfloat]
-        yCoords = take samples $ repeat 0
+        yCoords = replicate samples 0
 
     activeTexture $= TextureUnit 0
     texture Texture2D $= Enabled

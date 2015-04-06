@@ -1,3 +1,4 @@
+{-| Various color maps. -}
 module Graphics.DynamicGraph.ColorMaps (
     jet,
     jet_mod,
