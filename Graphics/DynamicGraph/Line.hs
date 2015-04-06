@@ -15,6 +15,7 @@
 > import Graphics.Rendering.OpenGL
 > 
 > import Graphics.DynamicGraph.Line
+> import Graphics.DynamicGraph.Window
 > 
 > randomVect :: Producer [GLfloat] IO ()
 > randomVect =  P.repeatM $ do
@@ -24,9 +25,10 @@
 > 
 > main = eitherT putStrLn return $ do
 >     setupGLFW
->     lineGraph <- lineWindow 1024 480 1000 1024 
+>     lineGraph <- window 1024 480 $ fmap (for cat . (lift .)) $ renderLine 1000 1024
 > 
 >     lift $ runEffect $ randomVect >-> lineGraph
+
 -}
 
 module Graphics.DynamicGraph.Line (

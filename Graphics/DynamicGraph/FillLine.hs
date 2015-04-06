@@ -13,6 +13,7 @@ Example usage:
 > import Graphics.Rendering.OpenGL
 > 
 > import Graphics.DynamicGraph.FillLine
+> import Graphics.DynamicGraph.Window
 > 
 > randomVect :: Producer [GLfloat] IO ()
 > randomVect =  P.repeatM $ do
@@ -22,9 +23,10 @@ Example usage:
 > 
 > main = eitherT putStrLn return $ do
 >     setupGLFW
->     lineGraph <- filledLineWindow 1024 480 1000 jet_mod
+>     lineGraph  <- window 1024 480 $ fmap (for cat . (lift . )) $ renderFilledLine 1000 jet_mod
 > 
 >     lift $ runEffect $ randomVect >-> lineGraph
+
 -}
 
 module Graphics.DynamicGraph.FillLine (
