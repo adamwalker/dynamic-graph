@@ -24,7 +24,7 @@ setupGLFW = do
     res <- lift $ G.init
     unless res (left "error initializing glfw")
 
--- | tryTakeMVar then putMVar
+-- | `tryTakeMVar` then `putMVar`
 replaceMVar :: MVar a -> a -> IO ()
 replaceMVar mv val = do
     tryTakeMVar mv

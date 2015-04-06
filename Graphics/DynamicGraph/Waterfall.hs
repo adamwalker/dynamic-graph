@@ -47,6 +47,8 @@ import Paths_dynamic_graph
 {-| Returns a `Consumer` that renders a waterfall plot into the current OpenGL context. 
 
     All OpenGL based initialization of the rendering function (loading of shaders, etc) is performed before the Consumer is returned.
+    
+    This function must be called with an OpenGL context currently set.
 -}
 renderWaterfall :: IsPixelData a 
                 => Int       -- ^ waterfall columns

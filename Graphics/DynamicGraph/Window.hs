@@ -1,5 +1,7 @@
 {-# LANGUAGE ScopedTypeVariables #-}
 
+{-| A convenience function for rendering any of the graphs implemented in this package to a standalone window.
+-}
 module Graphics.DynamicGraph.Window (
     window,
     module Graphics.DynamicGraph.Util
@@ -18,7 +20,17 @@ import Pipes
 
 import Graphics.DynamicGraph.Util
 
-window :: IsPixelData a => Int -> Int -> IO (Consumer a IO ()) -> EitherT String IO (Consumer a IO ())
+{-| A convenience function for rendering any of the graphs implemented in this package to a standalone window.
+    
+    Creates the window before returning.
+
+    Returns either an error message or a consumer that draws to the window.
+-}
+window :: IsPixelData a 
+       => Int                                  -- ^ Window width
+       -> Int                                  -- ^ Window height
+       -> IO (Consumer a IO ())                -- ^ The Consumer that draws on the window. Obtain this from one of the other modules in this package. Must be given in an IO monad so that it can be initialised with the OpenGL context created within this function.
+       -> EitherT String IO (Consumer a IO ()) 
 window width height renderPipe = do
     mv :: MVar a <- lift newEmptyMVar
     completion <- lift newEmptyMVar

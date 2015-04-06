@@ -47,6 +47,8 @@ import Paths_dynamic_graph
 {-| Returns a function that renders a filled in line graph into the current OpenGL context.
 
     All OpenGL based initialization of the rendering function (loading of shaders, etc) is performed before the function is returned.
+
+    This function must be called with an OpenGL context currently set.
 -}
 renderFilledLine :: IsPixelData a 
                  => Int             -- ^ The number of samples in each buffer passed to the rendering function.

@@ -17,6 +17,8 @@ import Paths_dynamic_graph
 {-| Returns a function that renders a cairo drawing into the current OpenGL context.
 
     All OpenGL based initialization of the rendering function (loading of shaders, rendering the cairo drawing to a texture, etc) is performed before the function is returned.
+
+    This function must be called with an OpenGL context currently set.
 -}
 renderCairo :: Render a   -- ^ Cairo render monad that does the drawing
             -> Int        -- ^ X resolution
