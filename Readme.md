@@ -26,7 +26,7 @@ import System.Random
 import Graphics.Rendering.OpenGL
 
 import Graphics.DynamicGraph.Waterfall
-import Graphics.DynamicGraph.Util
+import Graphics.DynamicGraph.Window
 
 randomVect :: Producer [GLfloat] IO ()
 randomVect =  P.repeatM $ do
@@ -36,7 +36,7 @@ randomVect =  P.repeatM $ do
 
 main = eitherT putStrLn return $ do
     setupGLFW
-    waterfall <- waterfallWindow 1024 480 1000 1000 jet_mod
+    waterfall <- window 1024 480 $ renderWaterfall 1000 1000 jet_mod
 
     lift $ runEffect $ randomVect >-> waterfall
 
