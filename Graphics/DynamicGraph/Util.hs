@@ -2,7 +2,8 @@
 module Graphics.DynamicGraph.Util (
     setupGLFW,
     replaceMVar,
-    checkVertexTextureUnits
+    checkVertexTextureUnits,
+    pipeify
     ) where
 
 import Control.Monad
@@ -12,6 +13,7 @@ import Control.Concurrent.MVar
 
 import Graphics.Rendering.OpenGL
 import Graphics.UI.GLFW as G
+import Pipes
 
 -- | Utility function to setup GLFW for graph drawing
 setupGLFW :: EitherT String IO ()
@@ -35,3 +37,6 @@ checkVertexTextureUnits = do
     mtu <- lift $ get maxVertexTextureImageUnits
     when (mtu <= 0) $ left "No texture units accessible from vertex shader"
 
+-- | Convert a function that performs a monadic action to a Consumer
+pipeify :: Monad m => (a -> m ()) -> Consumer a m ()
+pipeify = for cat . (lift .)

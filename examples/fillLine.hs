@@ -1,6 +1,7 @@
 import Control.Monad
 import Control.Monad.Trans.Either
 import Control.Concurrent
+import Control.Applicative
 import Pipes
 import qualified Pipes.Prelude as P
 import System.Random
@@ -17,6 +18,6 @@ randomVect =  P.repeatM $ do
 
 main = eitherT putStrLn return $ do
     setupGLFW
-    lineGraph  <- window 1024 480 $ fmap (for cat . (lift . )) $ renderFilledLine 1000 jet_mod
+    lineGraph  <- window 1024 480 $ pipeify <$> renderFilledLine 1000 jet_mod
 
     lift $ runEffect $ randomVect >-> lineGraph
