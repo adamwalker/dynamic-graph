@@ -9,7 +9,6 @@ import Control.Monad
 import Control.Monad.Trans.Class
 import Control.Monad.Trans.Either
 import Control.Concurrent.MVar
-import Control.DeepSeq
 
 import Graphics.Rendering.OpenGL
 import Graphics.UI.GLFW as G
