@@ -17,7 +17,9 @@ randomVect =  P.repeatM $ do
     return res
 
 main = eitherT putStrLn return $ do
-    setupGLFW
+    res <- lift setupGLFW
+    unless res (left "Unable to initilize GLFW")
+
     lineGraph  <- window 1024 480 $ pipeify <$> renderFilledLine 1000 jet_mod
 
     lift $ runEffect $ randomVect >-> lineGraph
