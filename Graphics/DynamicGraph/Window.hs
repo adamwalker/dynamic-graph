@@ -22,7 +22,9 @@ Example usage:
 >     return res
 > 
 > main = eitherT putStrLn return $ do
->     setupGLFW
+>     res <- lift setupGLFW
+>     unless res (left "Unable to initilize GLFW")
+>
 >     waterfall <- window 1024 480 $ renderWaterfall 1000 1000 jet_mod
 > 
 >     lift $ runEffect $ randomVect >-> waterfall
