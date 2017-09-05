@@ -43,7 +43,7 @@ library
         GLUtil       >=0.9.1 && <0.10, 
         transformers >=0.3   && <0.6, 
         either       >=4.1   && <4.5, 
-        pipes        >=4.1   && <4.3, 
+        pipes        >=4.1   && <4.4, 
         pango        >=0.13  && <0.14, 
         cairo        >=0.13  && <0.14, 
         colour       >=2.3   && <2.4
