@@ -65,7 +65,7 @@ window width height renderPipe = do
 
     closed <- lift $ newIORef False
 
-    lift $ forkOS $ void $ do
+    lift $ forkIO $ void $ do
         res <- runEitherT $ do
             res' <- lift $ createWindow width height "" Nothing Nothing
             win <- maybe (left "error creating window") return res'
