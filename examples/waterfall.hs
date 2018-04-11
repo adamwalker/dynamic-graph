@@ -1,5 +1,6 @@
 import Control.Monad
-import Control.Monad.Trans.Either
+import Control.Monad.Trans.Except
+import Control.Error.Util
 import Control.Concurrent
 import Pipes
 import qualified Pipes.Prelude as P
@@ -15,9 +16,9 @@ randomVect =  P.repeatM $ do
     threadDelay 10000
     return res
 
-main = eitherT putStrLn return $ do
+main = exceptT putStrLn return $ do
     res <- lift setupGLFW
-    unless res (left "Unable to initilize GLFW")
+    unless res (throwE "Unable to initilize GLFW")
 
     waterfall <- window 1024 480 $ renderWaterfall 1000 1000 jet_mod
 
