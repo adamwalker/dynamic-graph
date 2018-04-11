@@ -35,7 +35,7 @@ module Graphics.DynamicGraph.Window (
     module Graphics.DynamicGraph.Util
     ) where
 
-import Control.Monad.Trans.Either
+import Control.Monad.Trans.Except
 import Control.Concurrent hiding (yield)
 import Control.Concurrent.MVar
 import Data.IORef
@@ -58,7 +58,7 @@ window :: IsPixelData a
        => Int                                  -- ^ Window width
        -> Int                                  -- ^ Window height
        -> IO (Consumer a IO ())                -- ^ The Consumer that draws on the window. Obtain this from one of the other modules in this package. Must be given in an IO monad so that it can be initialised with the OpenGL context created within this function.
-       -> EitherT String IO (Consumer a IO ()) 
+       -> ExceptT String IO (Consumer a IO ()) 
 window width height renderPipe = do
     mv :: MVar a <- lift newEmptyMVar
     completion <- lift newEmptyMVar
@@ -66,9 +66,9 @@ window width height renderPipe = do
     closed <- lift $ newIORef False
 
     lift $ forkIO $ void $ do
-        res <- runEitherT $ do
+        res <- runExceptT $ do
             res' <- lift $ createWindow width height "" Nothing Nothing
-            win <- maybe (left "error creating window") return res'
+            win <- maybe (throwE "error creating window") return res'
             lift $ setWindowSizeCallback win $ Just $ \win x y -> 
                 viewport $= (Position 0 0, Size (fromIntegral x) (fromIntegral y))
             lift $ setWindowCloseCallback win $ Just $ \win -> writeIORef closed True
@@ -88,9 +88,9 @@ window width height renderPipe = do
             return $ runEffect $ thePipe >-> renderPipe
 
         case res of
-            Left  err        -> replaceMVar completion $ left err
+            Left  err        -> replaceMVar completion $ throwE err
             Right renderLoop -> do
-                replaceMVar completion $ right ()
+                replaceMVar completion $ return ()
                 renderLoop
 
     join $ lift $ takeMVar completion
