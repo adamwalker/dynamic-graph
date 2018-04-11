@@ -7,7 +7,8 @@
     Example usage:
 
 > import Control.Monad
-> import Control.Monad.Trans.Either
+> import Control.Monad.Trans.Except
+> import Control.Error.Util
 > import Control.Concurrent
 > import Control.Applicative
 > import Pipes
@@ -24,10 +25,10 @@
 >     threadDelay 10000
 >     return res
 > 
-> main = eitherT putStrLn return $ do
+> main = exceptT putStrLn return $ do
 >     res <- lift setupGLFW
->     unless res (left "Unable to initilize GLFW")
->     
+>     unless res (throwE "Unable to initilize GLFW")
+> 
 >     lineGraph <- window 1024 480 $ pipeify <$> renderLine 1000 1024
 > 
 >     lift $ runEffect $ randomVect >-> lineGraph
